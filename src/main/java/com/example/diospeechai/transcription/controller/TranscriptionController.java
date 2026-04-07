@@ -1,5 +1,6 @@
 package com.example.diospeechai.transcription.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -20,9 +21,7 @@ public class TranscriptionController {
 	}
 
 	@PostMapping
-	public TranscriptionResponse transcribe(@RequestPart("file") MultipartFile file) {
-
-		return service.transcribe(file);
+	public ResponseEntity<TranscriptionResponse> transcribe(@RequestPart("file") MultipartFile file) {
+		return ResponseEntity.ok(service.transcribe(file));
 	}
-
 }
