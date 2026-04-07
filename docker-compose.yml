@@ -1,0 +1,91 @@
+services:
+  speaches:
+    container_name: speaches
+
+    # imagem com suporte a CUDA
+    image: ghcr.io/speaches-ai/speaches:latest-cuda
+
+    # build opcional (caso queira customizar base CUDA)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: nvidia/cuda:12.6.3-base-ubuntu24.04
+      platforms:
+        - linux/amd64
+        - linux/arm64
+
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+
+    env_file:
+      - path: .env
+        required: false
+
+    networks:
+      - backend
+
+    # suporte a GPU
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # hot reload (dev)
+    develop:
+      watch:
+        - action: rebuild
+          path: ./uv.lock
+        - action: sync+restart
+          path: ./src
+          target: /home/ubuntu/speaches/src
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://0.0.0.0:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  dio-speaches-ai:
+    container_name: dio-speaches-ai
+
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      WHISPER_BASE_URL: http://speaches:8000
+
+    depends_on:
+      speaches:
+        condition: service_healthy
+
+    networks:
+      - backend
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  hf-hub-cache:
+
+networks:
+  backend:
