@@ -13,9 +13,11 @@
   <img src="https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4">
   <img src="https://img.shields.io/badge/Speaches-Whisper-4A90D9?style=flat-square" alt="Speaches Whisper">
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose">
-  <img src="https://img.shields.io/badge/Observability-OpenTelemetry%20%2B%20Zipkin-purple" alt="Observability">
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white" alt="Prometheus">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="MIT License">
 </p>
+
+
 
 ---
 
@@ -25,7 +27,7 @@ Solução desenvolvida para o desafio **DIO × Globant — Java & Spring Boot AI
 
 O objetivo é construir uma API REST capaz de receber arquivos de áudio e retornar a transcrição em texto, integrando o modelo **Whisper** (via [Speaches](https://github.com/speaches-ai/speaches)) como motor de reconhecimento de fala.
 
-O projeto demonstra integração com IA generativa a partir de uma stack Java moderna, separação de responsabilidades, tratamento de erros com `ProblemDetail` (RFC 9457) e infraestrutura containerizada com healthcheck e dependências ordenadas.
+O projeto demonstra integração com IA generativa a partir de uma stack Java moderna, separação de responsabilidades, tratamento de erros com `ProblemDetail` (RFC 9457) e infraestrutura containerizada com healthcheck e observabilidade via Micrometer + Prometheus.
 
 ---
 
@@ -33,7 +35,7 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 
 - [📋 Sobre o projeto](#-sobre-o-projeto)
 - [📑 Índice](#-índice)
-- [Roadmap para fase 2 - observabilidade + cache e fase 3 - resiliência + segurança](#roadmap-para-fase-2---observabilidade--cache-e-fase-3---resiliência--segurança)
+- [🗺️ Roadmap](#️-roadmap)
 - [🌐 Documentação](#-documentação)
 - [🛠️ Stack](#️-stack)
 - [🏗️ Arquitetura](#️-arquitetura)
@@ -41,25 +43,26 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 - [🚀 Quick Start](#-quick-start)
   - [Clone o projeto](#clone-o-projeto)
   - [🟢 Modo Desenvolvimento (recomendado para avaliação)](#-modo-desenvolvimento-recomendado-para-avaliação)
-    - [1️⃣ Subir infraestrutura](#1️⃣-subir-infraestrutura)
-    - [2️⃣ Subir aplicação](#2️⃣-subir-aplicação)
+    - [1️⃣ Subir infraestrutura (Speaches + Prometheus)](#1️⃣-subir-infraestrutura-speaches--prometheus)
+    - [2️⃣ Subir a aplicação](#2️⃣-subir-a-aplicação)
   - [🏭 Modo Produção (simulado)](#-modo-produção-simulado)
   - [🤖 Baixando o modelo Whisper](#-baixando-o-modelo-whisper)
   - [🧯 Encerrar ambiente](#-encerrar-ambiente)
 - [📡 Endpoint de transcrição](#-endpoint-de-transcrição)
   - [`POST /api/transcriptions`](#post-apitranscriptions)
+- [📊 Observabilidade](#-observabilidade)
 - [🧪 Testando a API](#-testando-a-api)
 - [🔧 Variáveis de ambiente](#-variáveis-de-ambiente)
 - [📁 Estrutura do projeto](#-estrutura-do-projeto)
 - [⚠️ Troubleshooting](#️-troubleshooting)
-- [🚀 Melhorias futuras](#-melhorias-futuras)
 - [Autor](#autor)
 - [📄 Licença](#-licença)
 
 ---
 
-## Roadmap para fase 2 - observabilidade + cache e fase 3 - resiliência + segurança
-**[ROADMAP - Fase 2 + 3](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
+## 🗺️ Roadmap
+
+**[Ver Roadmap completo — Fases 2 e 3](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
 
 ---
 
@@ -77,11 +80,12 @@ Acesse a documentação completa do projeto:
 |---|---|---|
 | Java | 25 | Linguagem principal |
 | Spring Boot | 4.x | Framework web |
+| Lombok | — | Redução de boilerplate (`@RequiredArgsConstructor`) |
 | Spring WebFlux (WebClient) | — | Integração HTTP com Speaches |
 | Speaches | latest-cuda | Servidor Whisper (transcrição) |
 | Docker / Docker Compose | — | Containerização e orquestração |
-| Actuator | — | Healthcheck da aplicação |
-| Prometheus | Latest | Coleta de métricas, scrape a cada 10s |
+| Actuator + Micrometer | — | Métricas e healthcheck |
+| Prometheus | Latest | Coleta de métricas via `/actuator/prometheus` |
 
 ---
 
@@ -93,36 +97,34 @@ Cliente (Postman / curl / Frontend)
          │  POST /api/transcriptions
          │  multipart/form-data { file }
          ▼
-┌─────────────────────────┐
-│   Spring Boot API       │  :8080
-│                         │
-│  TranscriptionController│
-│         │               │
-│  TranscriptionService   │  ← validação de tipo e tamanho
-│         │               │
-│  SpeechToTextClient     │  ← WebClient
-└────────┬────────────────┘
+┌─────────────────────────────────┐
+│   Spring Boot API          :8080│
+│                                 │
+│  TranscriptionController        │
+│         │                       │
+│  TranscriptionService   ←───────┼── TranscriptionMetrics (Micrometer)
+│         │                       │     • transcription.requests.total
+│  SpeechToTextClient (WebClient) │     • transcription.whisper.duration
+└────────┬────────────────────────┘     • transcription.file.size.bytes
          │
          │  POST /v1/audio/transcriptions
-         │  { file, model }
          ▼
-┌─────────────────────────┐
-│   Speaches (Whisper)    │  :8000
-│   Systran/faster-       │
-│   whisper-small         │
-└─────────────────────────┘
+┌──────────────────────────┐
+│   Speaches (Whisper):8000│
+│   faster-whisper-small   │
+└──────────────────────────┘
          │
-         │  { "text": "..." }
          ▼
 ┌─────────────────────────┐
 │   TranscriptionResponse │
 │   { text,               │
-│     processingTimeMs,   │
 │     fileSizeBytes }     │
 └─────────────────────────┘
-```
 
-Os dois serviços sobem via Docker Compose. A aplicação só inicia após o Speaches passar no healthcheck (`/health`), garantindo que o modelo já está disponível.
+         ┌─────────────────────────┐
+         │   Prometheus       :9090│  ← scrape /actuator/prometheus cada 10s
+         └─────────────────────────┘
+```
 
 ---
 
@@ -131,6 +133,7 @@ Os dois serviços sobem via Docker Compose. A aplicação só inicia após o Spe
 - [Docker](https://docs.docker.com/get-docker/) + [Docker Compose](https://docs.docker.com/compose/) v2+
 - GPU NVIDIA com drivers instalados (para a imagem CUDA padrão)
 - `uv` — CLI do Speaches (para baixar modelos)
+- JDK 25 (modo dev — execução via IDE ou `./gradlew bootRun`)
 
 > Sem GPU? Use a imagem CPU alterando a tag no `compose.yaml`:
 > ```yaml
@@ -143,8 +146,10 @@ Os dois serviços sobem via Docker Compose. A aplicação só inicia após o Spe
 
 O projeto possui dois modos de execução:
 
-- **dev** → ambiente voltado para desenvolvimento e avaliação
-- **prod** → ambiente containerizado simulando produção
+| Modo | Infraestrutura | Aplicação |
+|---|---|---|
+| **dev** | Docker Compose (`docker-compose.dev.yml`) | IDE ou `./gradlew bootRun` |
+| **prod** | Docker Compose (`docker-compose.yml`) | Container (build automático) |
 
 ---
 
@@ -159,34 +164,41 @@ cd dio-speech-ai
 
 ### 🟢 Modo Desenvolvimento (recomendado para avaliação)
 
-Nesse modo a infraestrutura é executada via Docker e a aplicação iniciada via IDE.
+Infraestrutura via Docker, aplicação rodando local — ciclo de feedback rápido.
 
-#### 1️⃣ Subir infraestrutura
+#### 1️⃣ Subir infraestrutura (Speaches + Prometheus)
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-A rede `dio-speech-ai_backend` é criada automaticamente.
-
-**Serviços iniciados:**
-- speaches-ai: http://localhost:8000
+Serviços iniciados:
+- Speaches (Whisper): http://localhost:8000
 - Prometheus: http://localhost:9090
 
-#### 2️⃣ Subir aplicação
+#### 2️⃣ Subir a aplicação
 
-**IDE:**
+**Via Gradle:**
 ```bash
-./gradlew clean build
+./gradlew bootRun
 ```
-Refresh Gradle project → Executar a aplicação
+
+**Via IDE:**
+```bash
+./gradlew clean build   # gera o build
+```
+Refresh Gradle → executar `DioSpeechAiApplication`
 
 **Acesse:**
 - API: http://localhost:8080/api/transcriptions
+- Health: http://localhost:8080/actuator/health
+- Métricas: http://localhost:8080/actuator/prometheus
+
+---
 
 ### 🏭 Modo Produção (simulado)
 
-Executa toda a stack containerizada.
+Toda a stack containerizada.
 
 ```bash
 ./gradlew clean build
@@ -194,27 +206,22 @@ docker compose up -d
 ```
 
 O Compose irá:
-1. Fazer build da imagem da API (`Dockerfile`)
-2. Pull da imagem `ghcr.io/speaches-ai/speaches:latest-cuda` (pesada — aguarde na primeira vez)
-3. Subir o Speaches na porta `8000`
-4. Subir a API na porta `8080` — somente após o Speaches estar saudável
-5. Subir Prometheus na porta `9000` - garantindo que ele só sobe depois que a API está pronta para ser raspada
+1. Build da imagem da API (`docker/Dockerfile`)
+2. Pull da imagem Speaches CUDA (pesada — aguarde na primeira vez)
+3. Subir Speaches na porta `8000`
+4. Subir a API na porta `8080` — somente após Speaches estar saudável
+5. Subir Prometheus na porta `9090` — somente após a API estar saudável
 
-Acompanhe os logs em tempo real:
 ```bash
-docker compose logs -f
-```
-
-Verifique se os três containers estão de pé:
-```bash
-docker compose ps
+docker compose logs -f     # acompanhar logs
+docker compose ps          # verificar status dos 3 containers
 ```
 
 ---
 
 ### 🤖 Baixando o modelo Whisper
 
-O modelo precisa ser baixado uma vez. Ele ficará cacheado no volume Docker `./models` e não será re-baixado nas próximas subidas.
+O modelo é baixado uma vez e cacheado no volume `hf-hub-cache` e não será re-baixado nas próximas subidas.
 
 **Instale o `uv`:**
 
@@ -229,11 +236,10 @@ choco install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-**Baixe o modelo:**
+**Baixe o modelo** (com Speaches já em execução):
 
 ```bash
 export SPEACHES_BASE_URL="http://localhost:8000"
-
 uvx speaches-cli model download Systran/faster-whisper-small
 ```
 
@@ -244,8 +250,12 @@ uvx speaches-cli model download Systran/faster-whisper-small
 ### 🧯 Encerrar ambiente
 
 ```bash
-docker compose down          # Para os containers
-docker compose down -v       # Para e remove volumes (apaga modelo - baixar novamente)
+# Modo dev
+docker compose -f docker-compose.dev.yml down
+
+# Modo prod
+docker compose down          # para containers
+docker compose down -v       # para e remove volumes (apaga modelo)
 ```
 
 ---
@@ -256,15 +266,11 @@ docker compose down -v       # Para e remove volumes (apaga modelo - baixar nova
 
 Recebe um arquivo de áudio e retorna a transcrição.
 
-**Request**
-
-```
-Content-Type: multipart/form-data
-```
+**Request** — `multipart/form-data`
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `file` | File | ✅ | Arquivo de áudio (`.wav`, `.wave`) |
+| `file` | File | ✅ | Arquivo de áudio |
 
 **Formatos aceitos**
 
@@ -275,10 +281,13 @@ Content-Type: multipart/form-data
 ```json
 {
   "text": "testando o áudio para a gravação e teste da API",
-  "processingTimeMs": 856,
   "fileSizeBytes": 461842
 }
 ```
+
+> ℹ️ O campo `processingTimeMs` foi removido na v2.1.0. O tempo de processamento agora é
+> rastreado com precisão via `transcription.whisper.duration` (Timer Micrometer com p50/p95/p99).
+> Acesse em: `GET /actuator/metrics/transcription.whisper.duration`
 
 **Response — 400 Bad Request**
 
@@ -291,6 +300,40 @@ Content-Type: multipart/form-data
   "instance": "/api/transcriptions",
   "timestamp": "2026-04-07T10:00:00Z"
 }
+```
+
+---
+
+## 📊 Observabilidade
+
+Disponível a partir da **v2.1.0**.
+
+| Endpoint | Descrição |
+|---|---|
+| `GET /actuator/health` | Status da aplicação |
+| `GET /actuator/metrics` | Lista todas as métricas disponíveis |
+| `GET /actuator/prometheus` | Métricas no formato Prometheus |
+
+**Métricas customizadas de negócio:**
+
+| Métrica | Tipo | Tags | Descrição |
+|---|---|---|---|
+| `transcription.requests.total` | Counter | `status=success\|error` | Total de transcrições |
+| `transcription.whisper.duration` | Timer | — | Latência das chamadas ao Whisper (p50/p95/p99) |
+| `transcription.file.size.bytes` | Distribution | — | Tamanhos dos arquivos processados |
+
+**Prometheus UI:** http://localhost:9090
+
+Queries úteis:
+```promql
+# Taxa de erros por minuto
+rate(transcription_requests_total{status="error"}[1m])
+
+# p99 de latência do Whisper
+histogram_quantile(0.99, rate(transcription_whisper_duration_seconds_bucket[5m]))
+
+# Tamanho médio dos arquivos
+transcription_file_size_bytes_sum / transcription_file_size_bytes_count
 ```
 
 ---
@@ -340,10 +383,10 @@ http://localhost:8000/
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `WHISPER_BASE_URL` | `http://speaches:8000` | URL interna do serviço Speaches |
+| `WHISPER_BASE_URL` | `http://speaches:8000` | URL do Speaches (usar nome do serviço no Docker) |
 | `WHISPER_MODEL` | `Systran/faster-whisper-small` | ID do modelo no Hugging Face |
 
-> Dentro do Docker, use sempre o nome do serviço (`speaches`) como host — nunca `localhost`.
+> No modo dev (`./gradlew bootRun`), o padrão aponta para `http://localhost:8000` automaticamente.
 
 ---
 
@@ -354,9 +397,9 @@ dio-speech-ai/
 ├── src/
 │   └── main/
 │       ├── java/com/example/diospeechai/
-│       │   ├── config/
-│       │   │   └── WebClientConfig.java          # Bean do WebClient
 │       │   └── transcription/
+│       │       ├── config/
+│       │       │   └── WebClientConfig.java
 │       │       ├── controller/
 │       │       │   └── TranscriptionController.java
 │       │       ├── dto/
@@ -365,15 +408,28 @@ dio-speech-ai/
 │       │       ├── exception/
 │       │       │   ├── GlobalExceptionHandler.java
 │       │       │   └── TranscriptionException.java
+│       │       ├── metrics/
+│       │       │   └── TranscriptionMetrics.java       ← novo v2.1.0
 │       │       └── service/
-│       │           ├── SpeechToTextClient.java    # Integração com Speaches
-│       │           └── TranscriptionService.java  # Validação e orquestração
+│       │           ├── SpeechToTextClient.java
+│       │           └── TranscriptionService.java
 │       └── resources/
 │           └── application.yml
-├── models/                                        # Cache local dos modelos Whisper
-├── audio.wav                                      # Arquivo de teste
-├── docker-compose.yaml                            # Docker Compose (app + speaches GPU NVIDIA)
+├── docs/
+│   ├── index.html
+│   ├── architecture.html
+│   ├── observability.html
+│   ├── resilience.html
+│   ├── roadmap_dio_speech_ai.html
+│   └── styles.css
+├── monitoring/
+│   └── prometheus/
+│       ├── prometheus.yml                              ← prod (scrape container)
+│       └── prometheus-dev.yml                         ← dev (scrape host.docker.internal)
 ├── docker/Dockerfile
+├── docker-compose.yml                                  ← prod (app + speaches + prometheus)
+├── docker-compose.dev.yml                             ← dev (speaches + prometheus)
+├── audio.wav
 └── build.gradle
 ```
 
@@ -422,11 +478,11 @@ Dentro do Docker, serviços se comunicam pelo nome definido no Compose:
 ✅ http://speaches:8000
 ❌ http://localhost:8000
 ```
----
+**Prometheus não coleta métricas (modo dev)**
 
-## 🚀 Melhorias futuras
-
-**[ROADMAP](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
+O `prometheus-dev.yml` aponta para `host.docker.internal:8080`. Certifique-se de que:
+1. A aplicação está rodando na porta `8080`
+2. O Docker tem permissão de acessar o host (padrão no Docker Desktop)
 
 ---
 
@@ -453,8 +509,6 @@ Este projeto está sob a licença [MIT](LICENSE).
 <p align="center">
   <strong>Desenvolvido com ☕ e 💻</strong>
 </p>
-
----
 
 ---
 

@@ -1,108 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roadmap — dio-speech-ai</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .phase-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 8px;
+      cursor: pointer; user-select: none;
+      border: 1px solid var(--border);
+      background: var(--card);
+      margin-bottom: 2px;
+    }
+    .phase-header:hover { background: #1a2234; }
+    .phase-badge {
+      font-size: 11px; font-weight: 600; padding: 2px 10px;
+      border-radius: 99px; white-space: nowrap;
+    }
+    .phase-title { font-size: 14px; font-weight: 500; flex: 1; color: var(--text); }
+    .phase-meta { font-size: 12px; color: var(--muted); }
+    .chevron { font-size: 10px; color: var(--muted); transition: transform 0.2s; }
+    .chevron.open { transform: rotate(90deg); }
 
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); }
+    .tasks { overflow: hidden; transition: max-height 0.3s ease; }
+    .task-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 14px 8px 28px;
+      border-left: 1.5px solid var(--border);
+      margin-left: 18px;
+      cursor: pointer;
+    }
+    .task-item:hover { background: #1a2234; border-radius: 0 8px 8px 0; }
+    .task-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .task-body { flex: 1; }
+    .task-title { font-size: 13px; font-weight: 500; color: var(--text); }
+    .task-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+    .task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .tag {
+      font-size: 11px; padding: 1px 7px; border-radius: 99px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .detail-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 12px; font-size: 13px;
+    }
+    .detail-panel h3 { font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+    .detail-panel p { color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+    .code-block {
+      background: #020617; border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px; color: #86efac;
+      overflow-x: auto; margin-top: 6px; line-height: 1.6;
+    }
+    .dep-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .dep-tag {
+      font-size: 11px; padding: 2px 8px; border-radius: 99px;
+      background: #0c2a1a; color: #22c55e; border: 1px solid #14532d;
+    }
+    .close-btn { float: right; font-size: 12px; color: var(--muted); cursor: pointer; padding: 0 4px; }
+    .close-btn:hover { color: var(--text); }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .hint { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .done-badge {
+      font-size: 10px; font-weight: 600; padding: 1px 7px;
+      border-radius: 99px; background: #0c2a1a; color: #22c55e;
+      border: 1px solid #14532d; margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Arquitetura</a>
+      <a href="observability.html">Observabilidade</a>
+      <a href="resilience.html">Resiliência</a>
+      <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
+    </nav>
 
-.phase-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-radius: var(--border-radius-md);
-  cursor: pointer; user-select: none;
-  border: 0.5px solid var(--color-border-secondary);
-  background: var(--color-background-secondary);
-  margin-bottom: 2px;
-}
-.phase-header:hover { background: var(--color-background-tertiary); }
-.phase-badge {
-  font-size: 11px; font-weight: 500; padding: 2px 8px;
-  border-radius: 99px; white-space: nowrap;
-}
-.phase-title { font-size: 14px; font-weight: 500; flex: 1; }
-.phase-meta { font-size: 12px; color: var(--color-text-secondary); }
-.chevron { font-size: 10px; color: var(--color-text-tertiary); transition: transform 0.2s; }
-.chevron.open { transform: rotate(90deg); }
+    <h1 style="font-size:1.8rem; margin: 24px 0 6px;">Roadmap — dio-speech-ai</h1>
+    <p class="hint">Clique em uma fase para expandir · Clique em uma tarefa para ver detalhes</p>
 
-.tasks { overflow: hidden; transition: max-height 0.3s ease; }
-.task-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 8px 14px 8px 28px;
-  border-left: 1.5px solid var(--color-border-tertiary);
-  margin-left: 18px;
-  cursor: pointer;
-}
-.task-item:hover { background: var(--color-background-secondary); border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; }
-.task-dot {
-  width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
-}
-.task-body { flex: 1; }
-.task-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
-.task-desc { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; line-height: 1.5; }
-.task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.tag {
-  font-size: 11px; padding: 1px 7px; border-radius: 99px;
-  border: 0.5px solid var(--color-border-secondary);
-  color: var(--color-text-secondary);
-}
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 1 — concluída (v1.0.0)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — observabilidade &amp; cache (em andamento)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — resiliência &amp; segurança</div>
+    </div>
 
-.detail-panel {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: var(--border-radius-lg);
-  padding: 16px; margin-top: 12px;
-  font-size: 13px;
-}
-.detail-panel h3 { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
-.detail-panel p { color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 8px; }
-.code-block {
-  background: var(--color-background-tertiary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-md);
-  padding: 10px 12px; font-family: var(--font-mono);
-  font-size: 12px; color: var(--color-text-secondary);
-  overflow-x: auto; margin-top: 6px; line-height: 1.6;
-}
-.dep-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.dep-tag {
-  font-size: 11px; padding: 2px 8px; border-radius: 99px;
-  background: var(--color-background-info);
-  color: var(--color-text-info);
-  border: 0.5px solid var(--color-border-info);
-}
-.close-btn {
-  float: right; font-size: 12px; color: var(--color-text-tertiary);
-  cursor: pointer; padding: 0 4px;
-}
-.close-btn:hover { color: var(--color-text-primary); }
+    <div id="phases"></div>
+    <div id="detail-container"></div>
 
-.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary); }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-</style>
-
-<h2 class="sr-only">Roadmap de evolução do projeto dio-speech-ai — Fases 2 e 3</h2>
-<a href="index.html">Home</a>
-
-<div style="padding: 1rem 0">
-  <div style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 14px;">
-    *Clique em uma fase para expandir<br>
-    **Clique em uma tarefa para ver detalhes (dependências, snippet, explicação)
+    <footer style="margin-top: 40px;">
+      <p>Desenvolvido por Eric Hiroshi</p>
+    </footer>
   </div>
-
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 1 — concluída</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — observabilidade &amp; cache</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — resiliência &amp; segurança</div>
-  </div>
-
-  <div id="phases"></div>
-  <div id="detail-container"></div>
-</div>
 
 <script>
 const phases = [
   {
-    id: 1, label: "Fase 1", title: "Base — concluída",
-    color: "#1D9E75", badgeBg: "#E1F5EE", badgeColor: "#0F6E56",
-    taskCount: 4, done: true,
+    id: 1, label: "Fase 1", title: "Base — API de transcrição",
+    color: "#1D9E75", badgeBg: "#0c2a1a", badgeColor: "#22c55e",
+    version: "v1.0.0", taskCount: 4, done: true,
     tasks: [
       { title: "API REST síncrona", desc: "POST /api/transcriptions com multipart/form-data", tags: ["Spring MVC", "WebFlux"], done: true },
       { title: "Integração com Whisper via Speaches", desc: "WebClient → POST /v1/audio/transcriptions", tags: ["WebClient", "Speaches"], done: true },
@@ -112,107 +115,118 @@ const phases = [
   },
   {
     id: 2, label: "Fase 2", title: "Observabilidade + Cache",
-    color: "#185FA5", badgeBg: "#E6F1FB", badgeColor: "#185FA5",
-    taskCount: 7, done: false,
+    color: "#185FA5", badgeBg: "#0a1929", badgeColor: "#60a5fa",
+    version: null, taskCount: 7, done: false,
     tasks: [
       {
         title: "2.1 — Micrometer + Prometheus",
-        desc: "Expor métricas da aplicação no endpoint /actuator/prometheus",
+        desc: "Métricas expostas em /actuator/prometheus, container Prometheus no Compose",
         tags: ["Micrometer", "Prometheus", "Actuator"],
         done: true,
-        deps: ["spring-boot-starter-actuator já presente"],
-        detail: "Adicionar dependência micrometer-registry-prometheus. Configurar management.endpoints no application.yml para expor /prometheus. Criar métricas customizadas: contador de transcrições, timer de processamento, gauge de tamanho de arquivo.",
-        snippet: `// build.gradle\nimplementation 'io.micrometer:micrometer-registry-prometheus'\n\n// application.yml\nmanagement:\n  endpoints.web.exposure.include: health,info,prometheus,metrics\n  metrics.distribution.percentiles-histogram.http.server.requests: true`
+        version: "v2.1.0",
+        detail: "Dependência micrometer-registry-prometheus adicionada. TranscriptionMetrics centraliza: Counter (success/error), Timer (whisper.duration p50/p95/p99), DistributionSummary (file.size.bytes). Container prometheus no docker-compose.yml (prod) e docker-compose.dev.yml (scrape via host.docker.internal). Perfil dev: ./gradlew bootRun + docker-compose.dev.yml.",
+        snippet: "// build.gradle\nimplementation 'io.micrometer:micrometer-registry-prometheus'\n\n// TranscriptionMetrics.java\nCounter successCounter = Counter.builder(\"transcription.requests.total\")\n    .tag(\"status\", \"success\").register(registry);\nTimer whisperTimer = Timer.builder(\"transcription.whisper.duration\")\n    .publishPercentiles(0.5, 0.95, 0.99).register(registry);"
       },
       {
         title: "2.2 — Logs estruturados (JSON)",
         desc: "Substituir logs texto por JSON para ingestão no Grafana Loki ou similar",
         tags: ["Logback", "JSON", "MDC"],
-        detail: "Adicionar logstash-logback-encoder. Criar logback-spring.xml com appender JSON. Enriquecer logs com MDC: requestId, fileName, fileSize, processingTimeMs. Cada transcrição gera um log estruturado rastreável.",
-        snippet: `// build.gradle\nimplementation 'net.logstash.logback:logstash-logback-encoder:8.0'\n\n// logback-spring.xml (novo arquivo)\n<encoder class="net.logstash.logback.encoder.LogstashEncoder">\n  <includeMdcKeyName>requestId</includeMdcKeyName>\n  <includeMdcKeyName>fileName</includeMdcKeyName>\n</encoder>`
+        done: false,
+        detail: "Adicionar logstash-logback-encoder. Criar logback-spring.xml com appender JSON. Enriquecer logs com MDC: requestId, fileName, fileSize. Cada transcrição gera um log estruturado rastreável.",
+        snippet: "// build.gradle\nimplementation 'net.logstash.logback:logstash-logback-encoder:8.0'\n\n// logback-spring.xml\n<encoder class=\"net.logstash.logback.encoder.LogstashEncoder\">\n  <includeMdcKeyName>requestId</includeMdcKeyName>\n  <includeMdcKeyName>fileName</includeMdcKeyName>\n</encoder>"
       },
       {
         title: "2.3 — Redis no Docker Compose",
         desc: "Subir container Redis e configurar Spring Data Redis na aplicação",
         tags: ["Redis", "Docker Compose", "Spring Data Redis"],
-        detail: "Adicionar serviço redis no compose.yaml. Adicionar dependência spring-boot-starter-data-redis. Configurar RedisTemplate com serializer adequado (Jackson para JSON). Expor porta 6379 apenas na rede backend.",
-        snippet: `# compose.yaml\nredis:\n  image: redis:7-alpine\n  container_name: redis\n  ports: ["6379:6379"]\n  networks: [backend]\n  healthcheck:\n    test: ["CMD","redis-cli","ping"]\n\n// build.gradle\nimplementation 'org.springframework.boot:spring-boot-starter-data-redis'`
+        done: false,
+        detail: "Adicionar serviço redis no compose.yaml. Adicionar dependência spring-boot-starter-data-redis. Configurar RedisTemplate com serializer Jackson. Expor porta 6379 apenas na rede backend.",
+        snippet: "# docker-compose.yml\nredis:\n  image: redis:7-alpine\n  healthcheck:\n    test: [\"CMD\",\"redis-cli\",\"ping\"]\n\n// build.gradle\nimplementation 'org.springframework.boot:spring-boot-starter-data-redis'"
       },
       {
         title: "2.4 — Cache por hash SHA-256",
         desc: "Calcular hash do arquivo e cachear transcrição em transcription:{hash}",
         tags: ["SHA-256", "Redis", "Cache"],
-        detail: "Criar CacheService que calcula SHA-256 do byte[] do arquivo antes de enviar ao Whisper. Chave Redis: transcription:{sha256hex}. TTL configurável via properties. Antes de chamar o Whisper, verificar cache. Hit → retorna imediatamente com campo cached:true na resposta. Miss → transcreve, armazena, retorna.",
-        snippet: `// CacheService.java\nString hash = DigestUtils.sha256Hex(file.getBytes());\nString key = "transcription:" + hash;\nTranscriptionResponse cached = redisTemplate.opsForValue().get(key);\nif (cached != null) return cached.withCached(true);\n\n// Após transcrever:\nredisTemplate.opsForValue().set(key, response, Duration.ofHours(24));`
+        done: false,
+        detail: "Criar CacheService que calcula SHA-256 do byte[] antes de enviar ao Whisper. Chave Redis: transcription:{sha256hex}. TTL configurável. Hit → retorna imediatamente com cached:true. Miss → transcreve, armazena, retorna.",
+        snippet: "String hash = DigestUtils.sha256Hex(file.getBytes());\nString key = \"transcription:\" + hash;\nTranscriptionResponse cached = redisTemplate.opsForValue().get(key);\nif (cached != null) return cached.withCached(true);\n\n// após transcrever:\nredisTemplate.opsForValue().set(key, response, Duration.ofHours(24));"
       },
       {
-        title: "2.5 — Métricas customizadas de negócio",
-        desc: "Contador cache.hit / cache.miss, timer whisper.call.duration",
-        tags: ["Micrometer", "Counter", "Timer"],
-        detail: "Usar MeterRegistry para registrar: Counter 'transcription.cache.hit', Counter 'transcription.cache.miss', Timer 'transcription.whisper.duration' (já temos start/end no service — migrar para Timer.record). Adicionar tag 'model' nas métricas do Whisper.",
-        snippet: `@Autowired MeterRegistry registry;\nCounter hitCounter = registry.counter("transcription.cache", "result","hit");\nCounter missCounter = registry.counter("transcription.cache","result","miss");\nTimer whisperTimer = registry.timer("transcription.whisper.duration");`
+        title: "2.5 — Métricas customizadas de cache",
+        desc: "Contadores cache.hit / cache.miss integrados ao TranscriptionMetrics",
+        tags: ["Micrometer", "Counter", "Cache"],
+        done: false,
+        detail: "Expandir TranscriptionMetrics com: Counter transcription.cache{result=hit}, Counter transcription.cache{result=miss}. Adicionar tag 'model' nas métricas do Whisper. Cache hit ratio visível no Prometheus: hits/(hits+misses).",
+        snippet: "Counter hitCounter = Counter.builder(\"transcription.cache\")\n    .tag(\"result\",\"hit\").register(registry);\nCounter missCounter = Counter.builder(\"transcription.cache\")\n    .tag(\"result\",\"miss\").register(registry);\n\n// Prometheus query:\n// rate(transcription_cache_total{result=\"hit\"}[1m])"
       },
       {
         title: "2.6 — Grafana + dashboards",
         desc: "Dashboard com: req/s, latência p50/p95/p99, cache hit rate, erros",
         tags: ["Grafana", "Prometheus", "Dashboard"],
-        detail: "Adicionar serviço grafana no compose.yaml com provisioning automático via volumes. Criar datasource prometheus.yaml apontando para http://prometheus:9090. Criar dashboard JSON com painéis: throughput (req/min), latências percentil, cache hit ratio (hits/(hits+misses)), tamanho médio dos arquivos.",
-        snippet: `# compose.yaml\nprometheus:\n  image: prom/prometheus\n  volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml"]\ngrafana:\n  image: grafana/grafana\n  volumes:\n    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning\n  ports: ["3000:3000"]`
+        done: false,
+        detail: "Adicionar serviço grafana no compose.yaml com provisioning automático via volumes. Datasource prometheus.yaml apontando para http://prometheus:9090. Dashboard JSON com: throughput (req/min), percentis de latência, cache hit ratio, distribuição de tamanhos.",
+        snippet: "# docker-compose.yml\ngrafana:\n  image: grafana/grafana\n  volumes:\n    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning\n  ports: [\"3000:3000\"]"
       },
       {
         title: "2.7 — Tracing com Zipkin (OpenTelemetry)",
-        desc: "Distribuir trace IDs por todo fluxo: controller → service → redis → whisper",
+        desc: "Trace IDs por todo fluxo: controller → service → redis → whisper",
         tags: ["Zipkin", "OpenTelemetry", "Micrometer Tracing"],
-        detail: "Adicionar spring-boot-starter-actuator com micrometer-tracing-bridge-otel e opentelemetry-exporter-zipkin. Subir container zipkin no compose. Configurar sampling rate (100% em dev). O trace_id aparece automaticamente nos logs estruturados via MDC (ponte Micrometer → MDC).",
-        snippet: `// build.gradle\nimplementation 'io.micrometer:micrometer-tracing-bridge-otel'\nimplementation 'io.opentelemetry:opentelemetry-exporter-zipkin'\n\n// application.yml\nmanagement.tracing.sampling.probability: 1.0\nzipkin.base-url: http://zipkin:9411`
+        done: false,
+        detail: "Adicionar micrometer-tracing-bridge-otel e opentelemetry-exporter-zipkin. Container zipkin no compose. Sampling 100% em dev. O trace_id aparece automaticamente nos logs JSON via MDC.",
+        snippet: "// build.gradle\nimplementation 'io.micrometer:micrometer-tracing-bridge-otel'\nimplementation 'io.opentelemetry:opentelemetry-exporter-zipkin'\n\n// application.yml\nmanagement.tracing.sampling.probability: 1.0\nzipkin.base-url: http://zipkin:9411"
       }
     ]
   },
   {
     id: 3, label: "Fase 3", title: "Resiliência + Segurança (JWT)",
-    color: "#7F77DD", badgeBg: "#EEEDFE", badgeColor: "#534AB7",
-    taskCount: 5, done: false,
+    color: "#7F77DD", badgeBg: "#1a1640", badgeColor: "#a5b4fc",
+    version: null, taskCount: 5, done: false,
     tasks: [
       {
-        title: "3.1 — Resilience4j no compose",
-        desc: "Adicionar dependência e configurar CircuitBreaker para chamadas ao Whisper",
+        title: "3.1 — CircuitBreaker (Resilience4j)",
+        desc: "@CircuitBreaker no SpeechToTextClient — fallback com 503",
         tags: ["Resilience4j", "CircuitBreaker"],
-        detail: "Adicionar spring-boot-starter-aop e resilience4j-spring-boot3. Criar @CircuitBreaker(name='whisper') em SpeechToTextClient.transcribe(). Configurar: slidingWindowSize=10, failureRateThreshold=50, waitDuration=30s, permittedInHalfOpenState=3. Fallback: retornar ServiceUnavailableException com detalhe no ProblemDetail.",
-        snippet: `// SpeechToTextClient.java\n@CircuitBreaker(name = "whisper", fallbackMethod = "fallback")\npublic WhisperResponse transcribe(MultipartFile file) { ... }\n\nprivate WhisperResponse fallback(MultipartFile f, Exception ex) {\n  throw new TranscriptionException("Whisper indisponível (circuit open)");\n}\n\n// application.yml\nresilience4j.circuitbreaker.instances.whisper:\n  slidingWindowSize: 10\n  failureRateThreshold: 50\n  waitDurationInOpenState: 30s`
+        done: false,
+        detail: "Adicionar spring-boot-starter-aop e resilience4j-spring-boot3. @CircuitBreaker(name='whisper') em SpeechToTextClient. Configurar: slidingWindowSize=10, failureRateThreshold=50, waitDuration=30s. Fallback: TranscriptionException com mensagem 'Whisper indisponível'.",
+        snippet: "@CircuitBreaker(name = \"whisper\", fallbackMethod = \"fallback\")\npublic WhisperResponse transcribe(MultipartFile file) { ... }\n\n// application.yml\nresilience4j.circuitbreaker.instances.whisper:\n  slidingWindowSize: 10\n  failureRateThreshold: 50\n  waitDurationInOpenState: 30s"
       },
       {
         title: "3.2 — Retry com backoff exponencial",
         desc: "@Retry no cliente Whisper: 3 tentativas, backoff 500ms → 2s",
         tags: ["Resilience4j", "Retry", "Backoff"],
-        detail: "Adicionar @Retry(name='whisper') junto com @CircuitBreaker (ordem importa: Retry wraps CircuitBreaker). Configurar: maxAttempts=3, waitDuration=500ms, enableExponentialBackoff=true, multiplier=2. Retry só em TranscriptionException (I/O), não em IllegalArgumentException (validação do usuário).",
-        snippet: `// application.yml\nresilience4j.retry.instances.whisper:\n  maxAttempts: 3\n  waitDuration: 500ms\n  enableExponentialBackoff: true\n  exponentialBackoffMultiplier: 2\n  retryExceptions:\n    - com.example.diospeechai.transcription.exception.TranscriptionException`
+        done: false,
+        detail: "@Retry junto com @CircuitBreaker (ordem importa: Retry wraps CB). maxAttempts=3, waitDuration=500ms, exponentialBackoff multiplier=2. Retry apenas em TranscriptionException, não em IllegalArgumentException.",
+        snippet: "// application.yml\nresilience4j.retry.instances.whisper:\n  maxAttempts: 3\n  waitDuration: 500ms\n  enableExponentialBackoff: true\n  exponentialBackoffMultiplier: 2\n  retryExceptions:\n    - TranscriptionException"
       },
       {
         title: "3.3 — Métricas de resiliência",
-        desc: "Expor estado do circuit breaker e tentativas de retry no Prometheus/Grafana",
+        desc: "Estado do circuit breaker e tentativas de retry no Prometheus",
         tags: ["Micrometer", "Resilience4j", "Prometheus"],
-        detail: "Resilience4j se integra automaticamente ao Micrometer. Métricas disponíveis: resilience4j_circuitbreaker_state (CLOSED/OPEN/HALF_OPEN), resilience4j_circuitbreaker_calls_total (sucesso/falha/não-permitida), resilience4j_retry_calls_total. Adicionar painel no Grafana: gauge do estado do CB + taxa de retries.",
-        snippet: `# Prometheus query — estado do circuit breaker\nresilience4j_circuitbreaker_state{name="whisper"}\n\n# Taxa de falhas\nrate(resilience4j_circuitbreaker_calls_total{\n  name="whisper",kind="failed"}[1m])`
+        done: false,
+        detail: "Resilience4j integra automaticamente com Micrometer. Métricas: resilience4j_circuitbreaker_state (CLOSED/OPEN/HALF_OPEN), _calls_total, resilience4j_retry_calls_total. Painel Grafana: gauge do estado do CB + taxa de retries.",
+        snippet: "# Prometheus\nresilience4j_circuitbreaker_state{name=\"whisper\"}\nrate(resilience4j_circuitbreaker_calls_total{name=\"whisper\",kind=\"failed\"}[1m])"
       },
       {
-        title: "3.4 — Spring Security + JWT (estrutura)",
-        desc: "Adicionar spring-boot-starter-security e configurar filtro JWT stateless",
+        title: "3.4 — Spring Security + JWT",
+        desc: "Filtro JWT stateless — /api/transcriptions exige ROLE_USER",
         tags: ["Spring Security", "JWT", "Stateless"],
-        detail: "Adicionar spring-boot-starter-security e java-jwt (Auth0) ou nimbus-jose-jwt. Criar JwtAuthFilter extends OncePerRequestFilter. SecurityFilterChain: stateless (SESSION=STATELESS), /actuator/health público, POST /api/transcriptions exige ROLE_USER. Criar endpoint POST /auth/token (apenas para dev) que gera token com sub, roles, exp.",
-        snippet: `// SecurityConfig.java\n@Bean SecurityFilterChain chain(HttpSecurity http) {\n  return http\n    .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))\n    .authorizeHttpRequests(a -> a\n      .requestMatchers("/actuator/health","/auth/token").permitAll()\n      .anyRequest().authenticated())\n    .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)\n    .csrf(AbstractHttpConfigurer::disable)\n    .build();\n}`
+        done: false,
+        detail: "spring-boot-starter-security + nimbus-jose-jwt. JwtAuthFilter extends OncePerRequestFilter. SecurityFilterChain: SESSION=STATELESS, /actuator/health e /auth/token públicos. Endpoint POST /auth/token (dev) gera token com sub, roles, exp.",
+        snippet: "@Bean SecurityFilterChain chain(HttpSecurity http) {\n  return http\n    .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))\n    .authorizeHttpRequests(a -> a\n      .requestMatchers(\"/actuator/health\",\"/auth/token\").permitAll()\n      .anyRequest().authenticated())\n    .addFilterBefore(jwtFilter, ...)\n    .csrf(AbstractHttpConfigurer::disable)\n    .build();\n}"
       },
       {
-        title: "3.5 — Testes de integração e documentação final",
-        desc: "Testes com @SpringBootTest cobrindo cache hit/miss, CB open/close, JWT válido/inválido",
+        title: "3.5 — Testes de integração",
+        desc: "Testcontainers: cache hit/miss, CB open/close, JWT válido/inválido",
         tags: ["JUnit 5", "Testcontainers", "SpringBootTest"],
-        detail: "Usar Testcontainers para Redis e Zipkin em testes. Testar: cache hit retorna cached:true; CB abre após N falhas e retorna 503; retry reconecta com sucesso na 2ª tentativa; JWT ausente → 401; JWT expirado → 401; JWT válido → 200. Atualizar README com novas variáveis e curl com -H Authorization.",
-        snippet: `// @SpringBootTest + Testcontainers\n@Container\nstatic RedisContainer redis = new RedisContainer("redis:7-alpine");\n\n@Test void shouldReturnCachedTranscription() {\n  // 1ª chamada: miss → chama Whisper\n  // 2ª chamada: hit → Redis, campo cached=true\n}`
+        done: false,
+        detail: "Testcontainers para Redis e Zipkin. Cenários: cache hit retorna cached=true; CB abre após N falhas → 503; retry reconecta na 2ª tentativa; JWT ausente → 401; JWT expirado → 401; JWT válido → 200.",
+        snippet: "@Container\nstatic RedisContainer redis = new RedisContainer(\"redis:7-alpine\");\n\n@Test void shouldReturnCachedTranscription() {\n  // 1ª chamada: miss → chama Whisper\n  // 2ª chamada: hit → Redis, cached=true\n}"
       }
     ]
   }
 ];
 
-let openPhases = new Set([2]);
+let openPhases = new Set([1, 2]);
 let activeTask = null;
 
 function renderPhases() {
@@ -223,12 +237,15 @@ function renderPhases() {
     const wrapper = document.createElement('div');
     wrapper.style.marginBottom = '8px';
 
+    const doneBadge = phase.done ? `<span class="done-badge">✓ concluída</span>` : '';
+    const versionBadge = phase.version ? `<span style="font-size:11px;color:#60a5fa;margin-left:4px">${phase.version}</span>` : '';
+
     const header = document.createElement('div');
     header.className = 'phase-header';
     header.innerHTML = `
       <span class="phase-badge" style="background:${phase.badgeBg};color:${phase.badgeColor}">${phase.label}</span>
-      <span class="phase-title">${phase.title}</span>
-      <span class="phase-meta">${phase.taskCount} tarefas${phase.done ? ' · ✓ concluída' : ''}</span>
+      <span class="phase-title">${phase.title}${doneBadge}${versionBadge}</span>
+      <span class="phase-meta">${phase.taskCount} tarefas</span>
       <span class="chevron ${isOpen ? 'open' : ''}">▶</span>
     `;
     header.onclick = () => {
@@ -239,34 +256,33 @@ function renderPhases() {
 
     const tasks = document.createElement('div');
     tasks.className = 'tasks';
-    tasks.style.maxHeight = isOpen ? '2000px' : '0';
+    tasks.style.maxHeight = isOpen ? '3000px' : '0';
 
-    if (phase.tasks) {
-      phase.tasks.forEach((task, ti) => {
-        const item = document.createElement('div');
-        item.className = 'task-item';
-        const isActive = activeTask && activeTask.phaseId === phase.id && activeTask.taskIdx === ti;
-        if (isActive) item.style.background = 'var(--color-background-info)';
+    phase.tasks.forEach((task, ti) => {
+      const item = document.createElement('div');
+      item.className = 'task-item';
+      const isActive = activeTask && activeTask.phaseId === phase.id && activeTask.taskIdx === ti;
+      if (isActive) item.style.background = '#0a1929';
 
-        item.innerHTML = `
-          <div class="task-dot" style="background:${phase.color}${task.done ? '' : '66'}"></div>
-          <div class="task-body">
-            <div class="task-title" style="${task.done ? 'text-decoration:line-through;color:var(--color-text-secondary)' : ''}">${task.title}</div>
-            <div class="task-desc">${task.desc}</div>
-            ${task.tags ? `<div class="task-tags">${task.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : ''}
-          </div>
-        `;
-        item.onclick = () => {
-          if (task.detail) {
-            if (isActive) { activeTask = null; }
-            else { activeTask = { phaseId: phase.id, taskIdx: ti, task, phase }; }
-            renderPhases();
-            renderDetail();
-          }
-        };
-        tasks.appendChild(item);
-      });
-    }
+      const vTag = task.version ? `<span style="font-size:10px;color:#22c55e;background:#0c2a1a;border:1px solid #14532d;padding:0 5px;border-radius:99px;margin-left:4px">${task.version} ✓</span>` : '';
+
+      item.innerHTML = `
+        <div class="task-dot" style="background:${phase.color}${task.done ? '' : '55'}"></div>
+        <div class="task-body">
+          <div class="task-title" style="${task.done ? 'text-decoration:line-through;color:#6b7280' : ''}">${task.title}${vTag}</div>
+          <div class="task-desc">${task.desc}</div>
+          ${task.tags ? `<div class="task-tags">${task.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : ''}
+        </div>
+      `;
+      item.onclick = () => {
+        if (task.detail) {
+          activeTask = (isActive) ? null : { phaseId: phase.id, taskIdx: ti, task, phase };
+          renderPhases();
+          renderDetail();
+        }
+      };
+      tasks.appendChild(item);
+    });
 
     wrapper.appendChild(header);
     wrapper.appendChild(tasks);
@@ -277,13 +293,13 @@ function renderPhases() {
 function renderDetail() {
   const container = document.getElementById('detail-container');
   if (!activeTask) { container.innerHTML = ''; return; }
-  const { task, phase } = activeTask;
+  const { task } = activeTask;
   container.innerHTML = `
     <div class="detail-panel">
       <span class="close-btn" id="close-detail">✕</span>
       <h3>${task.title}</h3>
       <p>${task.detail}</p>
-      ${task.deps ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Dependências:</div><div class="dep-list">${task.deps.map(d=>`<span class="dep-tag">${d}</span>`).join('')}</div>` : ''}
+      ${task.deps ? `<div style="font-size:12px;color:#9ca3af;margin-bottom:6px">Dependências:</div><div class="dep-list">${task.deps.map(d=>`<span class="dep-tag">${d}</span>`).join('')}</div>` : ''}
       ${task.snippet ? `<div class="code-block"><pre style="white-space:pre-wrap">${task.snippet}</pre></div>` : ''}
     </div>
   `;
@@ -293,3 +309,5 @@ function renderDetail() {
 renderPhases();
 renderDetail();
 </script>
+</body>
+</html>

@@ -1,36 +1,257 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resiliência — dio-speech-ai</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
+    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 12.5px; color: #86efac; overflow-x: auto; line-height: 1.7; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--text); font-weight: 500; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px; }
+    .planned { background: #1a1a2e; color: #818cf8; border: 1px solid #3730a3; }
+    .state-closed { color: #22c55e; font-weight: 600; }
+    .state-open   { color: #f87171; font-weight: 600; }
+    .state-half   { color: #fbbf24; font-weight: 600; }
+    .timeline-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-version { font-size: 11px; font-family: 'Courier New', monospace; color: #60a5fa; min-width: 54px; padding-top: 2px; }
+    .timeline-body { flex: 1; }
+    .timeline-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .timeline-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Resiliência</h1>
-        <a href="index.html">Home</a>
-        <pre>
-Client → API → Circuit Breaker → External API
-                    ↓
-                 Retry
-                    ↓
-                Fallback
-</pre>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Arquitetura</a>
+      <a href="observability.html">Observabilidade</a>
+      <a href="resilience.html">Resiliência</a>
+      <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
+    </nav>
 
-        <p>
-            - Retry
-            - Circuit Breaker
-            - Timeout
-            - Fallback
-        </p>
+    <h1 style="margin: 24px 0 4px;">Resiliência</h1>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:8px;">
+      Estratégia planejada para a <strong style="color:#818cf8">Fase 3</strong> — a ser implementada após a Fase 2 (Observabilidade + Cache).
+    </p>
+    <p style="color:var(--muted); font-size:12px; margin-bottom: 24px;">
+      Status atual: <span style="color:#fbbf24">⏳ não implementado</span> — o sistema não possui tolerância a falhas além do timeout de 30s no WebClient.
+    </p>
 
-        <br><br>
+    <!-- ── POR QUÊ RESILIÊNCIA ───────────────────────────────────── -->
+    <section class="card">
+      <h2>O problema atual</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom: 10px;">
+        O <code>SpeechToTextClient</code> faz uma chamada bloqueante ao Whisper com <code>.block(Duration.ofSeconds(30))</code>.
+        Se o Speaches estiver lento, sobrecarregado ou offline:
+      </p>
+      <pre>
+  Requisição do cliente
+         │
+         ▼
+  SpeechToTextClient.transcribe()
+         │
+         │  .block(30s)  ←── thread bloqueada por até 30 segundos
+         ▼
+  Speaches (pode estar lento / offline)
+         │
+         │  timeout ou erro
+         ▼
+  TranscriptionException("Falha na comunicação com Whisper")
+         │
+         ▼
+  HTTP 400  ←── sem retry, sem fallback, sem circuit breaker</pre>
+      <p style="color:var(--muted); font-size:13px; margin-top:10px;">
+        Sob carga, threads acumulam esperando o timeout → pool de threads esgotado → cascata de falhas.
+      </p>
+    </section>
 
-        <p>
-            <em> A resiliência é crucial para garantir que a aplicação continue funcionando mesmo diante de falhas em
-                serviços externos, melhorando a experiência do usuário e a confiabilidade do sistema. </em>
-        </p>
-    </div>
+    <!-- ── SOLUÇÃO PLANEJADA ─────────────────────────────────────── -->
+    <section class="card">
+      <h2>Solução planejada — Resilience4j</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+        Padrões aplicados em camadas sobre o <code>SpeechToTextClient</code>, na ordem de execução:
+      </p>
+      <pre>
+  Requisição
+       │
+       ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Retry  (v3.2.0)                                            │
+  │  maxAttempts=3 · backoff 500ms → 1s → 2s (exponencial)      │
+  │  retry apenas em TranscriptionException (I/O)               │
+  │  não faz retry em IllegalArgumentException (validação)      │
+  └───────────────────────────┬─────────────────────────────────┘
+                              │ (se ainda falhar após 3 tentativas)
+                              ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Circuit Breaker  (v3.1.0)                        estado:   │
+  │                                                             │
+  │  CLOSED ──(≥50% falhas em 10 calls)──► OPEN                 │
+  │    ↑                                      │                 │
+  │    └──(3 calls ok em HALF_OPEN)──◄── (30s espera)           │
+  │                                      HALF_OPEN              │
+  └───────────────────────────┬─────────────────────────────────┘
+                              │ (se OPEN → vai direto pro fallback)
+                              ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Fallback                                                   │
+  │  TranscriptionException("Whisper indisponível")             │
+  │  → GlobalExceptionHandler → HTTP 503 ProblemDetail          │
+  └─────────────────────────────────────────────────────────────┘</pre>
+    </section>
+
+    <!-- ── ESTADOS DO CIRCUIT BREAKER ───────────────────────────── -->
+    <section class="card">
+      <h2>Estados do Circuit Breaker</h2>
+      <table>
+        <thead><tr><th>Estado</th><th>Comportamento</th><th>Transição</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="state-closed">CLOSED</span></td>
+            <td>Operação normal — todas as chamadas passam para o Speaches</td>
+            <td>→ OPEN se ≥ 50% das últimas 10 chamadas falharem</td>
+          </tr>
+          <tr>
+            <td><span class="state-open">OPEN</span></td>
+            <td>Circuito aberto — chamadas bloqueadas imediatamente, fallback executado</td>
+            <td>→ HALF_OPEN após 30 segundos de espera</td>
+          </tr>
+          <tr>
+            <td><span class="state-half">HALF_OPEN</span></td>
+            <td>Sondagem — 3 chamadas de teste permitidas</td>
+            <td>→ CLOSED se as 3 tiverem sucesso; → OPEN se qualquer uma falhar</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── CONFIGURAÇÃO PLANEJADA ────────────────────────────────── -->
+    <section class="card">
+      <h2>Configuração planejada</h2>
+      <h3>application.yml</h3>
+      <pre>
+resilience4j:
+  circuitbreaker:
+    instances:
+      whisper:
+        slidingWindowSize: 10
+        failureRateThreshold: 50          # % de falhas para abrir
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true     # expõe no /actuator/health
+
+  retry:
+    instances:
+      whisper:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2   # 500ms → 1s → 2s
+        retryExceptions:
+          - com.example.diospeechai.transcription.exception.TranscriptionException</pre>
+
+      <h3>SpeechToTextClient.java</h3>
+      <pre>
+// Ordem das anotações importa:
+// Retry executa primeiro → tenta N vezes → depois CircuitBreaker decide
+@Retry(name = "whisper")
+@CircuitBreaker(name = "whisper", fallbackMethod = "fallback")
+public WhisperResponse transcribe(MultipartFile file) {
+    // ... WebClient call ...
+}
+
+private WhisperResponse fallback(MultipartFile file, Exception ex) {
+    throw new TranscriptionException(
+        "Whisper indisponível — tente novamente em instantes", ex
+    );
+}</pre>
+    </section>
+
+    <!-- ── MÉTRICAS DE RESILIÊNCIA ───────────────────────────────── -->
+    <section class="card">
+      <h2>Métricas de resiliência <span class="badge planned">⏳ v3.3.0</span></h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+        Resilience4j integra automaticamente com Micrometer. As métricas aparecerão no Prometheus sem código adicional.
+      </p>
+      <table>
+        <thead><tr><th>Métrica</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>resilience4j_circuitbreaker_state</td>
+            <td>Estado atual: 0=CLOSED · 1=OPEN · 2=HALF_OPEN</td>
+          </tr>
+          <tr>
+            <td>resilience4j_circuitbreaker_calls_total</td>
+            <td>Chamadas por tipo: successful, failed, not_permitted (OPEN), slow</td>
+          </tr>
+          <tr>
+            <td>resilience4j_retry_calls_total</td>
+            <td>Tentativas de retry por resultado: successful_with_retry, failed_with_retry</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Queries Prometheus</h3>
+      <pre>
+# Estado do circuit breaker (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
+resilience4j_circuitbreaker_state{name="whisper"}
+
+# Taxa de chamadas não-permitidas (circuito aberto)
+rate(resilience4j_circuitbreaker_calls_total{
+  name="whisper", kind="not_permitted"}[1m])
+
+# Taxa de chamadas que precisaram de retry
+rate(resilience4j_retry_calls_total{
+  name="whisper", kind="successful_with_retry"}[5m])</pre>
+    </section>
+
+    <!-- ── TIMELINE ──────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Timeline de implementação</h2>
+      <div class="timeline-item">
+        <span class="timeline-version">v3.1.0</span>
+        <div class="timeline-body">
+          <div class="timeline-title">CircuitBreaker</div>
+          <div class="timeline-desc">Dependências Resilience4j + AOP. <code>@CircuitBreaker</code> em SpeechToTextClient com fallback retornando 503.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-version">v3.2.0</span>
+        <div class="timeline-body">
+          <div class="timeline-title">Retry com backoff exponencial</div>
+          <div class="timeline-desc"><code>@Retry</code> wrapping o CircuitBreaker. 3 tentativas com backoff 500ms → 1s → 2s. Retry apenas em erros de I/O.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-version">v3.3.0</span>
+        <div class="timeline-body">
+          <div class="timeline-title">Métricas de resiliência no Grafana</div>
+          <div class="timeline-desc">Painel Grafana com gauge do estado do CB, taxa de falhas e retries. Integração automática via Micrometer.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-version">v3.4.0</span>
+        <div class="timeline-body">
+          <div class="timeline-title">Spring Security + JWT</div>
+          <div class="timeline-desc">Filtro JWT stateless. <code>/api/transcriptions</code> exige <code>ROLE_USER</code>. Endpoint <code>POST /auth/token</code> para geração de tokens em dev.</div>
+        </div>
+      </div>
+      <div class="timeline-item" style="border-bottom:none">
+        <span class="timeline-version">v3.5.0</span>
+        <div class="timeline-body">
+          <div class="timeline-title">Testes de integração</div>
+          <div class="timeline-desc">Testcontainers cobrindo: cache hit/miss, CB abre/fecha, JWT válido/inválido/expirado.</div>
+        </div>
+      </div>
+    </section>
+
+    <footer><p>Desenvolvido por Eric Hiroshi</p></footer>
+  </div>
 </body>
-
 </html>

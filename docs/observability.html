@@ -1,33 +1,146 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observabilidade — dio-speech-ai</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td:first-child { color: var(--text); font-family: 'Courier New', monospace; font-size: 13px; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
+    .badge-done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .badge-pending { background: #1a1a2e; color: #818cf8; border: 1px solid #3730a3; }
+    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: #86efac; overflow-x: auto; line-height: 1.6; margin-top: 10px; }
+    h2 { font-size: 1.2rem; margin: 28px 0 10px; color: var(--text); }
+    .status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Observabilidade</h1>
-        <a href="index.html">Home</a>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Arquitetura</a>
+      <a href="observability.html">Observabilidade</a>
+      <a href="resilience.html">Resiliência</a>
+      <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
+    </nav>
 
-        <pre>
-Request → API → Metrics (Prometheus)
-                → Logs
-                → Traces (Zipkin)
-</pre>
+    <h1 style="margin: 24px 0 6px;">Observabilidade</h1>
+    <p style="color: var(--muted); margin-bottom: 24px;">Estratégia de três pilares: métricas, logs estruturados e tracing distribuído.</p>
 
-        <p>
-            - Métricas: latência, throughput
-            - Logs estruturados
-            - Tracing distribuído
-        </p>
+    <section class="card">
+      <div class="status-row">
+        <h2 style="margin: 0;">Fluxo de observabilidade</h2>
+        <span class="badge badge-done">v2.1.0 parcial</span>
+      </div>
+      <pre>Request
+  │
+  ▼
+API (Spring Boot :8080)
+  │
+  ├── Métricas  →  /actuator/prometheus  →  Prometheus (:9090)   ✓ v2.1.0
+  │                                             ↓
+  │                                         Grafana (:3000)       ⏳ v2.6.0
+  │
+  ├── Logs      →  Console (texto)        →  Loki                 ⏳ v2.2.0
+  │              → logback JSON (v2.2.0)
+  │
+  └── Traces    →  Zipkin (:9411)                                 ⏳ v2.7.0
+                   (OpenTelemetry)</pre>
+    </section>
 
-        <br><br>
-        <p> <em> A observabilidade é fundamental para monitorar a saúde da aplicação, identificar gargalos e garantir a
-                performance.</em>
-        </p>
+    <section class="card">
+      <h2>Métricas — implementadas (v2.1.0)</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom: 4px;">Expostas em <code>/actuator/prometheus</code> · Scraping pelo Prometheus a cada 10s</p>
+      <table>
+        <thead>
+          <tr><th>Métrica</th><th>Tipo</th><th>Tags</th><th>Descrição</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>transcription.requests.total</td>
+            <td>Counter</td>
+            <td>status=success|error</td>
+            <td>Total de transcrições realizadas</td>
+          </tr>
+          <tr>
+            <td>transcription.whisper.duration</td>
+            <td>Timer</td>
+            <td>—</td>
+            <td>Latência das chamadas ao Whisper (p50/p95/p99)</td>
+          </tr>
+          <tr>
+            <td>transcription.file.size.bytes</td>
+            <td>Distribution</td>
+            <td>—</td>
+            <td>Distribuição dos tamanhos de arquivo enviados</td>
+          </tr>
+          <tr>
+            <td>http.server.requests</td>
+            <td>Timer</td>
+            <td>uri, method, status</td>
+            <td>Métricas HTTP automáticas (Spring Boot)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-    </div>
+    <section class="card">
+      <h2>Endpoints Actuator</h2>
+      <table>
+        <thead>
+          <tr><th>Endpoint</th><th>Descrição</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/actuator/health</td><td>Status da aplicação (UP/DOWN)</td></tr>
+          <tr><td>/actuator/metrics</td><td>Lista todas as métricas disponíveis</td></tr>
+          <tr><td>/actuator/prometheus</td><td>Métricas no formato Prometheus</td></tr>
+          <tr><td>/actuator/info</td><td>Informações da aplicação</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Queries Prometheus úteis</h2>
+      <pre># Taxa de sucesso por minuto
+rate(transcription_requests_total{status="success"}[1m])
+
+# Taxa de erros por minuto
+rate(transcription_requests_total{status="error"}[1m])
+
+# p99 de latência do Whisper
+histogram_quantile(0.99,
+  rate(transcription_whisper_duration_seconds_bucket[5m]))
+
+# Tamanho médio dos arquivos (bytes)
+transcription_file_size_bytes_sum / transcription_file_size_bytes_count
+
+# Throughput HTTP geral (req/s)
+rate(http_server_requests_seconds_count[1m])</pre>
+    </section>
+
+    <section class="card">
+      <div class="status-row">
+        <h2 style="margin: 0;">Logs estruturados</h2>
+        <span class="badge badge-pending">⏳ v2.2.0</span>
+      </div>
+      <p style="color:var(--muted); font-size:13px;">Atualmente os logs são texto simples via Logback padrão. Na v2.2.0 serão migrados para JSON com <code>logstash-logback-encoder</code>, enriquecidos via MDC com <code>requestId</code>, <code>fileName</code> e <code>fileSizeBytes</code>.</p>
+    </section>
+
+    <section class="card">
+      <div class="status-row">
+        <h2 style="margin: 0;">Tracing distribuído</h2>
+        <span class="badge badge-pending">⏳ v2.7.0</span>
+      </div>
+      <p style="color:var(--muted); font-size:13px;">Tracing com OpenTelemetry + Zipkin será implementado na v2.7.0. O <code>trace_id</code> aparecerá automaticamente nos logs JSON via MDC, conectando métricas, logs e traces num mesmo fluxo rastreável.</p>
+    </section>
+
+    <footer>
+      <p>Desenvolvido por Eric Hiroshi</p>
+    </footer>
+  </div>
 </body>
-
 </html>

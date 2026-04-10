@@ -1,50 +1,203 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arquitetura — dio-speech-ai</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 20px 0 8px; }
+    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 12.5px; color: #86efac; overflow-x: auto; line-height: 1.7; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px; }
+    .done  { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .planned { background: #1a1a2e; color: #818cf8; border: 1px solid #3730a3; }
+    .port  { font-family: 'Courier New', monospace; font-size: 12px; color: #60a5fa; }
+    .layer-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Arquitetura (C4)</h1>
-        <a href="index.html">Home</a>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Arquitetura</a>
+      <a href="observability.html">Observabilidade</a>
+      <a href="resilience.html">Resiliência</a>
+      <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
+    </nav>
 
-        <h2>Contexto</h2>
-        <pre>
-User → API (Spring Boot) → AI Service (Speech-to-Text)
-</pre>
+    <h1 style="margin: 24px 0 4px;">Arquitetura — C4 Model</h1>
+    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">Visão em três níveis: Contexto → Containers → Componentes</p>
 
-        <h2>Containers</h2>
-        <pre>
-[Client]
-   ↓
-[API]
-   ↓
-[Speech API]
-   ↓
-[External AI]
+    <!-- ── NÍVEL 1: CONTEXTO ─────────────────────────────────────── -->
+    <section class="card">
+      <h2>Nível 1 — Contexto</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">Quem usa o sistema e com quais sistemas externos ele interage.</p>
+      <pre>
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Sistema: dio-speech-ai                                          │
+  │                                                                  │
+  │    Usuário / Cliente HTTP                                        │
+  │         │  POST /api/transcriptions                              │
+  │         │  multipart/form-data { file: audio }                   │
+  │         ▼                                                        │
+  │    ┌──────────────┐     WebClient      ┌─────────────────────┐  │
+  │    │  Spring Boot │ ─────────────────► │  Speaches (Whisper) │  │
+  │    │  API  :8080  │ ◄───────────────── │  AI Service  :8000  │  │
+  │    └──────────────┘   { "text": "..." }└─────────────────────┘  │
+  │                                                                  │
+  └──────────────────────────────────────────────────────────────────┘</pre>
+    </section>
 
-+ Redis (cache)
-+ Prometheus/Grafana (metrics)
-</pre>
+    <!-- ── NÍVEL 2: CONTAINERS ───────────────────────────────────── -->
+    <section class="card">
+      <h2>Nível 2 — Containers (estado atual: v2.1.0)</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">Processos em execução e como se comunicam. Gerenciados via Docker Compose.</p>
+      <pre>
+  ┌─── Docker network: backend ──────────────────────────────────────┐
+  │                                                                  │
+  │  ┌──────────────────────┐      HTTP :8080                        │
+  │  │   dio-speaches-ai    │ ◄──────────────────── Cliente externo  │
+  │  │   Spring Boot API    │                                        │
+  │  │   Java 25 / JVM      │ ──── WebClient ────► speaches:8000     │
+  │  └──────────────────────┘                            │           │
+  │           │ /actuator/prometheus                     │           │
+  │           ▼                                          │           │
+  │  ┌──────────────────────┐                            │           │
+  │  │     prometheus       │  scrape cada 10s           │           │
+  │  │   prom/prometheus    │ ───────────────────────────┘           │
+  │  │   UI: :9090          │                                        │
+  │  └──────────────────────┘                                        │
+  │                                                                  │
+  │  ┌──────────────────────┐                                        │
+  │  │      speaches        │  modelo: faster-whisper-small          │
+  │  │  Whisper CUDA :8000  │  volume: hf-hub-cache                  │
+  │  └──────────────────────┘                                        │
+  │                                                                  │
+  │  [ redis :6379 ]         ← planejado v2.3.0                      │
+  │  [ grafana :3000 ]       ← planejado v2.6.0                      │
+  │  [ zipkin :9411 ]        ← planejado v2.7.0                      │
+  │                                                                  │
+  └──────────────────────────────────────────────────────────────────┘</pre>
 
-        <h2>Componentes</h2>
-        <pre>
-Controller → Service → External API
-             ↓
-           Cache (Redis)
-</pre>
+      <h3>Composes disponíveis</h3>
+      <table>
+        <thead><tr><th>Arquivo</th><th>Serviços</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>docker-compose.dev.yml</td>
+            <td>speaches + prometheus</td>
+            <td>Dev — app sobe via <code>./gradlew bootRun</code> ou IDE</td>
+          </tr>
+          <tr>
+            <td>docker-compose.yml</td>
+            <td>dio-speaches-ai + speaches + prometheus</td>
+            <td>Prod simulado — stack completa containerizada</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-        <br><br>
+    <!-- ── NÍVEL 3: COMPONENTES ──────────────────────────────────── -->
+    <section class="card">
+      <h2>Nível 3 — Componentes (dentro da API)</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">Classes e responsabilidades dentro do container <code>dio-speaches-ai</code>.</p>
+      <pre>
+  POST /api/transcriptions
+         │
+         ▼
+  ┌─────────────────────────────────────────────────────┐
+  │ TranscriptionController                             │
+  │  @RestController — recebe MultipartFile             │
+  └───────────────────────┬─────────────────────────────┘
+                          │ transcribe(file)
+                          ▼
+  ┌─────────────────────────────────────────────────────┐
+  │ TranscriptionService                                │
+  │  • validate() — tipo e tamanho                      │
+  │  • metrics.recordFileSize()                         │
+  │  • metrics.recordWhisperCall( supplier )  ──────────┼──► TranscriptionMetrics
+  │  • metrics.recordSuccess() / recordError()          │     Counter, Timer, Distribution
+  └───────────────────────┬─────────────────────────────┘
+                          │ transcribe(file)
+                          ▼
+  ┌─────────────────────────────────────────────────────┐
+  │ SpeechToTextClient                                  │
+  │  @Component — WebClient                             │
+  │  POST speaches:8000/v1/audio/transcriptions         │
+  └─────────────────────────────────────────────────────┘
+                          │
+                          ▼
+                   WhisperResponse { text }
+                          │
+                          ▼
+                 TranscriptionResponse { text, fileSizeBytes }
 
-        <p>
-            <em> A arquitetura do projeto é baseada em uma estrutura de camadas, onde a API atua como intermediária
-                entre o cliente e os serviços de IA externos. O uso de cache com Redis melhora a performance, enquanto a
-                integração com Prometheus e Grafana permite monitorar métricas essenciais para garantir a saúde e
-                eficiência da aplicação. </em>
-        </p>
-    </div>
+  ┌─────────────────────────────────────────────────────┐
+  │ GlobalExceptionHandler  @RestControllerAdvice       │
+  │  TranscriptionException → 400 ProblemDetail         │
+  │  IllegalArgumentException → 400                     │
+  │  Exception → 500                                    │
+  └─────────────────────────────────────────────────────┘</pre>
+
+      <h3>Pacotes</h3>
+      <table>
+        <thead><tr><th>Pacote</th><th>Responsabilidade</th></tr></thead>
+        <tbody>
+          <tr><td>transcription/controller</td><td>Receber requisição HTTP, delegar ao service</td></tr>
+          <tr><td>transcription/service</td><td>Validação, orquestração, métricas</td></tr>
+          <tr><td>transcription/metrics <span class="badge done">v2.1.0</span></td><td>Instrumentação Micrometer (Counter, Timer, Distribution)</td></tr>
+          <tr><td>transcription/dto</td><td>TranscriptionResponse, WhisperResponse</td></tr>
+          <tr><td>transcription/exception</td><td>TranscriptionException, GlobalExceptionHandler</td></tr>
+          <tr><td>transcription/config</td><td>WebClientConfig</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── EVOLUÇÃO PLANEJADA ────────────────────────────────────── -->
+    <section class="card">
+      <h2>Evolução planejada da arquitetura</h2>
+      <table>
+        <thead><tr><th>Versão</th><th>O que muda</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>v2.2.0</td>
+            <td>Logs JSON (Logback + logstash-encoder) com MDC: <code>requestId</code>, <code>fileName</code>, <code>fileSizeBytes</code></td>
+          </tr>
+          <tr>
+            <td>v2.3.0</td>
+            <td>Container <code>redis:7-alpine</code> no Compose + <code>spring-boot-starter-data-redis</code></td>
+          </tr>
+          <tr>
+            <td>v2.4.0</td>
+            <td>CacheService: SHA-256 do arquivo → chave <code>transcription:{hash}</code> no Redis, TTL 24h</td>
+          </tr>
+          <tr>
+            <td>v2.6.0</td>
+            <td>Container Grafana com provisioning automático de datasource + dashboard JSON</td>
+          </tr>
+          <tr>
+            <td>v2.7.0</td>
+            <td>Zipkin + OpenTelemetry — trace_id propagado via MDC nos logs JSON</td>
+          </tr>
+          <tr>
+            <td>v3.1.0</td>
+            <td>Resilience4j <code>@CircuitBreaker</code> + <code>@Retry</code> em SpeechToTextClient</td>
+          </tr>
+          <tr>
+            <td>v3.4.0</td>
+            <td>Spring Security + JWT stateless — <code>/api/transcriptions</code> exige <code>ROLE_USER</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer><p>Desenvolvido por Eric Hiroshi</p></footer>
+  </div>
 </body>
-
 </html>

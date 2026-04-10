@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dio-speech-ai</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 14px; }
+    .stack-item { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .stack-item .name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .stack-item .desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+    .badge-done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .badge-wip  { background: #0a1929; color: #60a5fa; border: 1px solid #1e40af; }
+    .phase-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .phase-row:last-child { border-bottom: none; }
+    .phase-num { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 52px; }
+    .phase-desc { font-size: 13px; color: var(--text); flex: 1; }
+    .phase-version { font-size: 11px; color: #22c55e; font-family: 'Courier New', monospace; }
+  </style>
 </head>
-
 <body>
   <div class="container">
     <header>
@@ -15,8 +27,7 @@
         src="https://github.com/erichiroshi/dio-speech-ai/blob/main/images/logo%20eric%20hiroshi.png?raw=true"
         alt="Logo Eric Hiroshi" />
       <h1>dio-speech-ai</h1>
-      <p class="subtitle">API de transcrição de áudio com foco em arquitetura moderna, observabilidade e escalabilidade
-      </p>
+      <p class="subtitle">API de transcrição de áudio com foco em arquitetura moderna, observabilidade e escalabilidade</p>
     </header>
 
     <nav>
@@ -30,51 +41,76 @@
     <section class="card">
       <h2>🚀 Sobre o projeto</h2>
       <p>
-        O <strong>dio-speech-ai</strong> é uma API desenvolvida com Spring Boot para processamento e transcrição de
-        áudio utilizando serviços de IA.
-        O projeto evolui com foco em boas práticas de arquitetura, incluindo observabilidade, resiliência e performance.
+        O <strong>dio-speech-ai</strong> é uma API desenvolvida com Spring Boot para transcrição de áudio
+        utilizando o modelo <strong>Whisper</strong> via Speaches. O projeto evolui em fases com foco em
+        boas práticas de arquitetura: observabilidade, cache, resiliência e segurança.
       </p>
+      <p style="margin-top: 10px;">
+        Desenvolvido para o desafio <strong>DIO × Globant — Java &amp; Spring Boot AI Developer</strong>.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>📈 Progresso do roadmap</h2>
+      <div class="phase-row">
+        <span class="phase-num">Fase 1</span>
+        <span class="phase-desc">API base — transcrição síncrona, Docker Compose, ProblemDetail</span>
+        <span class="badge badge-done">✓ concluída</span>
+        <span class="phase-version">v1.0.0</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 2</span>
+        <span class="phase-desc">Observabilidade + Cache — Prometheus ✓ · Logs JSON · Redis · Grafana · Zipkin</span>
+        <span class="badge badge-wip">em andamento</span>
+        <span class="phase-version">v2.1.0+</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 3</span>
+        <span class="phase-desc">Resiliência + Segurança — CircuitBreaker · Retry · JWT</span>
+        <span style="font-size:11px;color:var(--muted);">planejada</span>
+        <span class="phase-version">v3.x.0</span>
+      </div>
+      <div class="actions" style="margin-top: 16px;">
+        <a class="btn btn-primary" href="roadmap_dio_speech_ai.html">Ver roadmap detalhado</a>
+      </div>
     </section>
 
     <section class="card">
       <h2>⚙️ Como executar</h2>
-      <p>
-        O projeto utiliza Docker para facilitar o setup do ambiente.
-      </p>
+      <p>Dois modos de execução disponíveis:</p>
+      <p style="margin-top: 10px;"><strong style="color:var(--primary)">Desenvolvimento</strong> — infraestrutura no Docker, app local</p>
       <div class="actions">
-        <code>docker compose up</code>
+        <code>docker compose -f docker-compose.dev.yml up -d</code>
       </div>
-      <p style="margin-top: 12px;">
-        Após subir os containers, a API estará disponível localmente.
-      </p>
-    </section>
-
-    <section class="card">
-      <h2>📈 Roadmap do projeto</h2>
-      <p>
-        A evolução do projeto está organizada em fases, incluindo melhorias como cache, observabilidade, resiliência e
-        segurança.
-      </p>
+      <div class="actions" style="margin-top: 8px;">
+        <code>./gradlew bootRun</code>
+      </div>
+      <p style="margin-top: 14px;"><strong style="color:var(--primary)">Produção (simulada)</strong> — stack completa containerizada</p>
       <div class="actions">
-        <a class="btn btn-primary" href="roadmap_dio_speech_ai.html"
-          target="_blank">
-          Ver roadmap completo
-        </a>
+        <code>docker compose up -d</code>
       </div>
     </section>
 
     <section class="card">
-      <h2>🧠 Stack utilizada</h2>
-      <p>
-        Java 25 · Spring Boot · Docker · Prometheus · Redis(implementar) · Grafana(implementar) · Zipkin(implementar)
-      </p>
+      <h2>🧠 Stack atual</h2>
+      <div class="stack-grid">
+        <div class="stack-item"><div class="name">Java 25</div><div class="desc">Linguagem principal</div></div>
+        <div class="stack-item"><div class="name">Spring Boot 4.x</div><div class="desc">Framework web</div></div>
+        <div class="stack-item"><div class="name">Lombok</div><div class="desc">@RequiredArgsConstructor</div></div>
+        <div class="stack-item"><div class="name">Speaches (Whisper)</div><div class="desc">Motor de transcrição</div></div>
+        <div class="stack-item"><div class="name">Docker Compose</div><div class="desc">Orquestração (dev + prod)</div></div>
+        <div class="stack-item"><div class="name">Micrometer + Prometheus <span class="badge badge-done">v2.1</span></div><div class="desc">Métricas e scraping</div></div>
+        <div class="stack-item" style="opacity:0.5"><div class="name">Redis</div><div class="desc">Cache SHA-256 (v2.3+)</div></div>
+        <div class="stack-item" style="opacity:0.5"><div class="name">Grafana</div><div class="desc">Dashboards (v2.6+)</div></div>
+        <div class="stack-item" style="opacity:0.5"><div class="name">Zipkin / OTel</div><div class="desc">Tracing (v2.7+)</div></div>
+        <div class="stack-item" style="opacity:0.5"><div class="name">Resilience4j</div><div class="desc">CircuitBreaker (v3.1+)</div></div>
+        <div class="stack-item" style="opacity:0.5"><div class="name">Spring Security + JWT</div><div class="desc">Autenticação (v3.4+)</div></div>
+      </div>
     </section>
 
     <footer>
-      <p>Desenvolvido por Eric Hiroshi</p>
+      <p>Desenvolvido por <strong>Eric Hiroshi</strong> · <a href="https://www.linkedin.com/in/eric-hiroshi/" style="color:var(--primary)">LinkedIn</a> · <a href="https://github.com/erichiroshi" style="color:var(--primary)">GitHub</a></p>
     </footer>
-
   </div>
 </body>
-
 </html>
