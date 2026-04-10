@@ -30,8 +30,6 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 
 ## 📑 Índice
 
-- [� Sobre o projeto](#-sobre-o-projeto)
-- [📑 Índice](#-índice)
 - [🛠️ Stack](#️-stack)
 - [🏗️ Arquitetura](#️-arquitetura)
 - [⚙️ Pré-requisitos](#️-pré-requisitos)
@@ -46,6 +44,11 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 - [🚀 Melhorias futuras](#-melhorias-futuras)
 - [Autor](#autor)
 - [📄 Licença](#-licença)
+
+---
+
+## Roadmap para fase 2 - observabilidade + cache e fase 3 - resiliência + segurança
+**[ROADMAP - Fase 2 + 3](docs/roadmap_dio_speech_ai.html)**
 
 ---
 
@@ -346,12 +349,7 @@ Dentro do Docker, serviços se comunicam pelo nome definido no Compose:
 
 ## 🚀 Melhorias futuras
 
-- [ ] Suporte a múltiplos idiomas via parâmetro na requisição
-- [ ] Upload assíncrono com fila de mensagens (RabbitMQ / Kafka)
-- [ ] Cache de transcrições por hash do arquivo (Redis)
-- [ ] Observabilidade completa (Prometheus + Grafana + Zipkin)
-- [ ] Autenticação via JWT
-- [ ] Suporte a formatos adicionais (`.ogg`, `.flac`, `.mp4`)
+**[ROADMAP](docs/roadmap_dio_speech_ai.html)**
 
 ---
 
