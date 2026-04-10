@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '1.0.0'
+version = '2.1.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -23,8 +23,18 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	
+	//Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Exporta métricas no formato Prometheus via /actuator/prometheus
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
+	//Tests	
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {

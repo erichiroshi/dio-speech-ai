@@ -7,53 +7,67 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.diospeechai.transcription.dto.TranscriptionResponse;
 import com.example.diospeechai.transcription.dto.WhisperResponse;
+import com.example.diospeechai.transcription.exception.TranscriptionException;
+import com.example.diospeechai.transcription.metrics.TranscriptionMetrics;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 @Service
 public class TranscriptionService {
 
     private final SpeechToTextClient client;
+    private final TranscriptionMetrics metrics;
     
     private static final Set<String> ALLOWED_TYPES = Set.of(
     	    "audio/wav",
     	    "audio/mpeg",
-    	    "audio/wave"
+    	    "audio/wave",
+            "audio/x-wav"
     	);
-
-    public TranscriptionService(SpeechToTextClient client) {
-        this.client = client;
-    }
 
     public TranscriptionResponse transcribe(MultipartFile file) {
 
         validate(file);
-    	
-        long start = System.currentTimeMillis();
         
-        WhisperResponse whisper = client.transcribe(file);
+        // Registra tamanho do arquivo antes de processar
+        metrics.recordFileSize(file.getSize());
+    	
+		try {
+			// Timer envolve apenas a chamada ao Whisper, não a validação
+			WhisperResponse whisper = metrics.recordWhisperCall(() -> client.transcribe(file));
 
-        long end = System.currentTimeMillis();
+			metrics.recordSuccess();
 
-        return new TranscriptionResponse(
-                whisper.text(),
-                (end - start),
-                file.getSize()
-        );
-    }
-    
-    private void validate(MultipartFile file) {
+			return new TranscriptionResponse(whisper.text(), file.getSize());
+
+		} catch (RuntimeException ex) {
+			metrics.recordError();
+			throw ex;
+		}
+	}
+
+	   private void validate(MultipartFile file) {
+		   
+        if (file == null || file.isEmpty()) {
+            throw new TranscriptionException("Arquivo vazio ou ausente");
+        }		   
 
     	String contentType = file.getContentType();
     	
 		if (contentType == null) {
-			throw new IllegalArgumentException("Arquivo não pode ser nulo");
+            throw new TranscriptionException("Content-Type do arquivo não informado");
 		}
     	
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("Arquivo vazio");
+            throw new TranscriptionException("Arquivo vazio");
         }
         
 		if (!ALLOWED_TYPES.contains(contentType.toLowerCase())) {
-			throw new IllegalArgumentException("Tipo de arquivo inválido");
+			throw new TranscriptionException(
+					"Tipo de arquivo inválido: '%s'. Tipos aceitos: %s"
+						.formatted(contentType, ALLOWED_TYPES)
+			);
 		}
 	}
 }

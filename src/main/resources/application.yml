@@ -1,6 +1,9 @@
 spring:
   application:
     name: dio-speech-ai
+  profiles:
+    active:
+    - dev
 
   servlet:
     multipart:
@@ -10,3 +13,28 @@ spring:
 whisper:
   base-url: ${WHISPER_BASE_URL:http://localhost:8000}
   model: ${WHISPER_MODEL:Systran/faster-whisper-small}
+
+# ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+ 
+  endpoint:
+    health:
+      show-details: always   # exibe detalhes de cada indicador de saúde
+ 
+  # Habilita histogramas de percentil para latência HTTP
+  # Permite queries p50, p95, p99 no Prometheus/Grafana
+  metrics:
+    distribution:
+      percentiles-histogram:
+        '[http.server.requests]': true
+      # Percentis pré-calculados (mais leves que histogramas completos)
+      percentiles:
+        '[http.server.requests]': 0.5, 0.95, 0.99
+ 
+    # Tags globais adicionadas a TODAS as métricas desta aplicação
+    tags:
+      application: ${spring.application.name}	

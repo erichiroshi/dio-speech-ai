@@ -83,7 +83,7 @@ body { font-family: var(--font-sans); }
 
 <div style="padding: 1rem 0">
   <div style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 14px;">
-    Clique em uma fase para expandir · Clique em uma tarefa para ver detalhes
+    <b>Clique em uma fase para expandir · Clique em uma tarefa para ver detalhes</b>
   </div>
 
   <div class="legend">
@@ -118,6 +118,7 @@ const phases = [
         title: "2.1 — Micrometer + Prometheus",
         desc: "Expor métricas da aplicação no endpoint /actuator/prometheus",
         tags: ["Micrometer", "Prometheus", "Actuator"],
+        done: true,
         deps: ["spring-boot-starter-actuator já presente"],
         detail: "Adicionar dependência micrometer-registry-prometheus. Configurar management.endpoints no application.yml para expor /prometheus. Criar métricas customizadas: contador de transcrições, timer de processamento, gauge de tamanho de arquivo.",
         snippet: `// build.gradle\nimplementation 'io.micrometer:micrometer-registry-prometheus'\n\n// application.yml\nmanagement:\n  endpoints.web.exposure.include: health,info,prometheus,metrics\n  metrics.distribution.percentiles-histogram.http.server.requests: true`

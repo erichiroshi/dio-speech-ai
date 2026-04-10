@@ -11,6 +11,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -44,6 +46,32 @@ public class GlobalExceptionHandler {
 		            "Invalid request parameters",
 		            "bad-request"
 		    );
+	}
+	
+	@ExceptionHandler(MissingServletRequestPartException.class)
+	public ProblemDetail handleMissingServletRequestPart(MissingServletRequestPartException ex) {
+		
+		log.warn("Bad request | message={}", ex.getMessage());
+		
+		return setProblemDetail(
+				HttpStatus.BAD_REQUEST,
+				"Bad request",
+				"Required part 'file' is not present.",
+				"bad-request"
+				);
+	}
+	
+	@ExceptionHandler(MultipartException.class)
+	public ProblemDetail handleMultipart(MultipartException ex) {
+		
+		log.warn("Bad request | message={}", ex.getMessage());
+		
+		return setProblemDetail(
+				HttpStatus.BAD_REQUEST,
+				"Bad request",
+				"Current request is not a multipart request.",
+				"bad-request"
+				);
 	}
 
 	@ExceptionHandler(Exception.class)

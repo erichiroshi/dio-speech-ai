@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4">
   <img src="https://img.shields.io/badge/Speaches-Whisper-4A90D9?style=flat-square" alt="Speaches Whisper">
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose">
+  <img src="https://img.shields.io/badge/Observability-OpenTelemetry%20%2B%20Zipkin-purple" alt="Observability">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="MIT License">
 </p>
 
@@ -30,11 +31,21 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 
 ## 📑 Índice
 
+- [📋 Sobre o projeto](#-sobre-o-projeto)
+- [📑 Índice](#-índice)
+- [Roadmap para fase 2 - observabilidade + cache e fase 3 - resiliência + segurança](#roadmap-para-fase-2---observabilidade--cache-e-fase-3---resiliência--segurança)
+- [🌐 Documentação](#-documentação)
 - [🛠️ Stack](#️-stack)
 - [🏗️ Arquitetura](#️-arquitetura)
 - [⚙️ Pré-requisitos](#️-pré-requisitos)
-- [🐳 Subindo o ambiente](#-subindo-o-ambiente)
+- [🚀 Quick Start](#-quick-start)
+  - [Clone o projeto](#clone-o-projeto)
+  - [🟢 Modo Desenvolvimento (recomendado para avaliação)](#-modo-desenvolvimento-recomendado-para-avaliação)
+    - [1️⃣ Subir infraestrutura](#1️⃣-subir-infraestrutura)
+    - [2️⃣ Subir aplicação](#2️⃣-subir-aplicação)
+- [🏭 Modo Produção (simulado)](#-modo-produção-simulado)
 - [🤖 Baixando o modelo Whisper](#-baixando-o-modelo-whisper)
+- [🧯 Encerrar ambiente](#-encerrar-ambiente)
 - [📡 Endpoint de transcrição](#-endpoint-de-transcrição)
   - [`POST /api/transcriptions`](#post-apitranscriptions)
 - [🧪 Testando a API](#-testando-a-api)
@@ -52,6 +63,14 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 
 ---
 
+## 🌐 Documentação
+
+Acesse a documentação completa do projeto:
+
+👉 https://erichiroshi.github.io/dio-speech-ai/
+
+---
+
 ## 🛠️ Stack
 
 | Tecnologia | Versão | Uso |
@@ -62,6 +81,7 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 | Speaches | latest-cuda | Servidor Whisper (transcrição) |
 | Docker / Docker Compose | — | Containerização e orquestração |
 | Actuator | — | Healthcheck da aplicação |
+| Prometheus | Latest | Coleta de métricas, scrape a cada 10s |
 
 ---
 
@@ -119,9 +139,57 @@ Os dois serviços sobem via Docker Compose. A aplicação só inicia após o Spe
 
 ---
 
-## 🐳 Subindo o ambiente
+## 🚀 Quick Start
+
+O projeto possui dois modos de execução:
+
+- **dev** → ambiente voltado para desenvolvimento e avaliação
+- **prod** → ambiente containerizado simulando produção
+
+---
+
+### Clone o projeto
 
 ```bash
+git clone https://github.com/erichiroshi/dio-speech-ai.git
+cd dio-speech-ai
+```
+
+---
+
+### 🟢 Modo Desenvolvimento (recomendado para avaliação)
+
+Nesse modo a infraestrutura é executada via Docker e a aplicação iniciada via IDE.
+
+#### 1️⃣ Subir infraestrutura
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+A rede `dio-speech-ai_backend` é criada automaticamente.
+
+**Serviços iniciados:**
+- speaches-ai: http://localhost:8000
+- Prometheus: http://localhost:9090
+
+#### 2️⃣ Subir aplicação
+
+**IDE:**
+```bash
+./gradlew clean build
+```
+Refresh Gradle project → Executar a aplicação
+
+**Acesse:**
+- API: http://localhost:8080/api/transcriptions
+
+## 🏭 Modo Produção (simulado)
+
+Executa toda a stack containerizada.
+
+```bash
+./gradlew clean build
 docker compose up -d
 ```
 
@@ -130,13 +198,14 @@ O Compose irá:
 2. Pull da imagem `ghcr.io/speaches-ai/speaches:latest-cuda` (pesada — aguarde na primeira vez)
 3. Subir o Speaches na porta `8000`
 4. Subir a API na porta `8080` — somente após o Speaches estar saudável
+5. Subir Prometheus na porta `9000` - garantindo que ele só sobe depois que a API está pronta para ser raspada
 
 Acompanhe os logs em tempo real:
 ```bash
 docker compose logs -f
 ```
 
-Verifique se os dois containers estão de pé:
+Verifique se os três containers estão de pé:
 ```bash
 docker compose ps
 ```
@@ -169,6 +238,15 @@ uvx speaches-cli model download Systran/faster-whisper-small
 ```
 
 > ⚠️ O download do modelo pode levar alguns minutos (~460 MB). Execute com o Speaches já em execução.
+
+---
+
+## 🧯 Encerrar ambiente
+
+```bash
+docker compose down          # Para os containers
+docker compose down -v       # Para e remove volumes (apaga modelo - baixar novamente)
+```
 
 ---
 
@@ -344,7 +422,6 @@ Dentro do Docker, serviços se comunicam pelo nome definido no Compose:
 ✅ http://speaches:8000
 ❌ http://localhost:8000
 ```
-
 ---
 
 ## 🚀 Melhorias futuras

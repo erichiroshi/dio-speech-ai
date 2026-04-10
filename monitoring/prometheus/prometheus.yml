@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s       # coleta métricas a cada 15 segundos
+  evaluation_interval: 15s   # avalia regras a cada 15 segundos
+
+scrape_configs:
+  - job_name: 'dio-speech-ai'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['dio-speaches-ai:8080']
+        labels:
+          service: 'dio-speech-ai'
+          environment: 'prod'

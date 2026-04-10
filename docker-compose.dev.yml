@@ -7,16 +7,6 @@ services:
     # imagem com suporte a CUDA
     image: ghcr.io/speaches-ai/speaches:latest-cuda
 
-    # build opcional (caso queira customizar base CUDA)
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BASE_IMAGE: nvidia/cuda:12.6.3-base-ubuntu24.04
-      platforms:
-        - linux/amd64
-        - linux/arm64
-
     restart: unless-stopped
 
     ports:
@@ -57,37 +47,7 @@ services:
       retries: 3
       start_period: 5s
 
-  # ── API Spring Boot ──────────────────────────────────────────────────────────
-  dio-speaches-ai:
-    container_name: dio-speaches-ai
-
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-
-    ports:
-      - "8080:8080"
-
-    environment:
-      WHISPER_BASE_URL: http://speaches:8000
-
-    depends_on:
-      speaches:
-        condition: service_healthy
-
-    networks:
-      - backend
-
-    restart: unless-stopped
-
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
-# ── Prometheus ───────────────────────────────────────────────────────────────
+  # ── Prometheus ───────────────────────────────────────────────────────────────
   # v2.1.0 — coleta métricas da API via /actuator/prometheus a cada 10s
   prometheus:
     container_name: prometheus
@@ -99,31 +59,20 @@ services:
  
     volumes:
       # Arquivo de configuração com jobs de scraping
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus 
+      - ./monitoring/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus-dev.yml:ro
+ 
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus-dev.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'   # permite reload via POST /-/reload
  
-    depends_on:
-      dio-speaches-ai:
-        condition: service_healthy
- 
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
     networks:
       - backend
- 
+
 volumes:
   hf-hub-cache:
-  prometheus_data:
 
 networks:
   backend:
