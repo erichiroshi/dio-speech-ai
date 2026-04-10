@@ -48,7 +48,7 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 ---
 
 ## Roadmap para fase 2 - observabilidade + cache e fase 3 - resiliência + segurança
-**[ROADMAP - Fase 2 + 3](docs/roadmap_dio_speech_ai.html)**
+**[ROADMAP - Fase 2 + 3](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
 
 ---
 
@@ -349,7 +349,7 @@ Dentro do Docker, serviços se comunicam pelo nome definido no Compose:
 
 ## 🚀 Melhorias futuras
 
-**[ROADMAP](docs/roadmap_dio_speech_ai.html)**
+**[ROADMAP](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
 
 ---
 
