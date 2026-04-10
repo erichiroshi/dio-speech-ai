@@ -8,6 +8,7 @@
 <body>
     <div class="container">
         <h1>Arquitetura (C4)</h1>
+        <a href="index.html">Home</a>
 
         <h2>Contexto</h2>
         <pre>
@@ -18,24 +19,31 @@ User → API (Spring Boot) → AI Service (Speech-to-Text)
         <pre>
 [Client]
    ↓
-[API Gateway]
+[API]
    ↓
 [Speech API]
    ↓
 [External AI]
 
 + Redis (cache)
-+ RabbitMQ (async)
 + Prometheus/Grafana (metrics)
 </pre>
 
         <h2>Componentes</h2>
         <pre>
-Controller → Service → Adapter → External API
+Controller → Service → External API
              ↓
            Cache (Redis)
 </pre>
 
+        <br><br>
+
+        <p>
+            <em> A arquitetura do projeto é baseada em uma estrutura de camadas, onde a API atua como intermediária
+                entre o cliente e os serviços de IA externos. O uso de cache com Redis melhora a performance, enquanto a
+                integração com Prometheus e Grafana permite monitorar métricas essenciais para garantir a saúde e
+                eficiência da aplicação. </em>
+        </p>
     </div>
 </body>
 

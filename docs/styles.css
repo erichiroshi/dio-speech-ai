@@ -59,6 +59,14 @@
         font-size: 1.1rem;
     }
 
+    .logo-perfil {
+        width: 250px;
+        /* Ajuste o valor conforme necessário */
+        height: auto;
+        border-radius: 12px;
+        /* Opcional: arredonda levemente as bordas */
+    }
+
     .card {
         background: var(--card);
         border: 1px solid var(--border);
