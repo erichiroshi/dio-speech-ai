@@ -43,9 +43,9 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
   - [🟢 Modo Desenvolvimento (recomendado para avaliação)](#-modo-desenvolvimento-recomendado-para-avaliação)
     - [1️⃣ Subir infraestrutura](#1️⃣-subir-infraestrutura)
     - [2️⃣ Subir aplicação](#2️⃣-subir-aplicação)
-- [🏭 Modo Produção (simulado)](#-modo-produção-simulado)
-- [🤖 Baixando o modelo Whisper](#-baixando-o-modelo-whisper)
-- [🧯 Encerrar ambiente](#-encerrar-ambiente)
+  - [🏭 Modo Produção (simulado)](#-modo-produção-simulado)
+  - [🤖 Baixando o modelo Whisper](#-baixando-o-modelo-whisper)
+  - [🧯 Encerrar ambiente](#-encerrar-ambiente)
 - [📡 Endpoint de transcrição](#-endpoint-de-transcrição)
   - [`POST /api/transcriptions`](#post-apitranscriptions)
 - [🧪 Testando a API](#-testando-a-api)
@@ -184,7 +184,7 @@ Refresh Gradle project → Executar a aplicação
 **Acesse:**
 - API: http://localhost:8080/api/transcriptions
 
-## 🏭 Modo Produção (simulado)
+### 🏭 Modo Produção (simulado)
 
 Executa toda a stack containerizada.
 
@@ -212,7 +212,7 @@ docker compose ps
 
 ---
 
-## 🤖 Baixando o modelo Whisper
+### 🤖 Baixando o modelo Whisper
 
 O modelo precisa ser baixado uma vez. Ele ficará cacheado no volume Docker `./models` e não será re-baixado nas próximas subidas.
 
@@ -241,7 +241,7 @@ uvx speaches-cli model download Systran/faster-whisper-small
 
 ---
 
-## 🧯 Encerrar ambiente
+### 🧯 Encerrar ambiente
 
 ```bash
 docker compose down          # Para os containers
