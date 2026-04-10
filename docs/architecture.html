@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Arquitetura (C4)</h1>
+
+        <h2>Contexto</h2>
+        <pre>
+User → API (Spring Boot) → AI Service (Speech-to-Text)
+</pre>
+
+        <h2>Containers</h2>
+        <pre>
+[Client]
+   ↓
+[API Gateway]
+   ↓
+[Speech API]
+   ↓
+[External AI]
+
++ Redis (cache)
++ RabbitMQ (async)
++ Prometheus/Grafana (metrics)
+</pre>
+
+        <h2>Componentes</h2>
+        <pre>
+Controller → Service → Adapter → External API
+             ↓
+           Cache (Redis)
+</pre>
+
+    </div>
+</body>
+
+</html>
