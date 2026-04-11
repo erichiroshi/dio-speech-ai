@@ -10,15 +10,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.diospeechai.transcription.dto.TranscriptionResponse;
 import com.example.diospeechai.transcription.service.TranscriptionService;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/transcriptions")
+@RequiredArgsConstructor
 public class TranscriptionController {
 
 	private final TranscriptionService service;
-
-	public TranscriptionController(TranscriptionService service) {
-		this.service = service;
-	}
 
 	@PostMapping
 	public ResponseEntity<TranscriptionResponse> transcribe(@RequestPart("file") MultipartFile file) {

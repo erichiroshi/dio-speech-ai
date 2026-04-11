@@ -129,11 +129,12 @@ const phases = [
       },
       {
         title: "2.2 — Logs estruturados (JSON)",
-        desc: "Substituir logs texto por JSON para ingestão no Grafana Loki ou similar",
+        desc: "logstash-logback-encoder + logback-spring.xml + MdcLoggingFilter com requestId por request",
         tags: ["Logback", "JSON", "MDC"],
-        done: false,
-        detail: "Adicionar logstash-logback-encoder. Criar logback-spring.xml com appender JSON. Enriquecer logs com MDC: requestId, fileName, fileSize. Cada transcrição gera um log estruturado rastreável.",
-        snippet: "// build.gradle\nimplementation 'net.logstash.logback:logstash-logback-encoder:8.0'\n\n// logback-spring.xml\n<encoder class=\"net.logstash.logback.encoder.LogstashEncoder\">\n  <includeMdcKeyName>requestId</includeMdcKeyName>\n  <includeMdcKeyName>fileName</includeMdcKeyName>\n</encoder>"
+        done: true,
+        version: "v2.2.0",
+        detail: "logback-spring.xml com dois perfis: prod → JSON (campos MDC de primeiro nível), dev → texto colorido. MdcLoggingFilter popula requestId (UUID), httpMethod, requestUri. TranscriptionService adiciona fileName, fileSizeBytes, whisperModel. GlobalExceptionHandler inclui requestId no ProblemDetail. Header X-Request-Id em todas as respostas.",
+        snippet: "// build.gradle\nimplementation 'net.logstash.logback:logstash-logback-encoder:9.0'\n\n// Log JSON gerado em prod:\n{\n  \"level\": \"INFO\",\n  \"message\": \"Transcrição concluída | chars=142\",\n  \"requestId\": \"a3f2c1d0-...\",\n  \"fileName\": \"audio.wav\",\n  \"fileSizeBytes\": \"461842\",\n  \"whisperModel\": \"Systran/faster-whisper-small\"\n}"
       },
       {
         title: "2.3 — Redis no Docker Compose",

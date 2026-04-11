@@ -29,4 +29,9 @@ management:
         '[http.server.requests]': 0.5, 0.95, 0.99
  
     tags:
-      application: ${spring.application.name}	
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    '[com.example.diospeechai]': DEBUG	

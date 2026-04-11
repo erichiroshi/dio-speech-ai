@@ -180,12 +180,14 @@ Serviços iniciados:
 
 **Via Gradle:**
 ```bash
-./gradlew bootRun
+./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
 **Via IDE:**
 ```bash
 ./gradlew clean build   # gera o build
+# Via IDE: Run Configuration → Environment Variables
+SPRING_PROFILES_ACTIVE=dev
 ```
 Refresh Gradle → executar `DioSpeechAiApplication`
 
