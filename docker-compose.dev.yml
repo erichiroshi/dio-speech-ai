@@ -96,6 +96,5 @@ services:
 volumes:
   hf-hub-cache:
 
-
 networks:
   backend:

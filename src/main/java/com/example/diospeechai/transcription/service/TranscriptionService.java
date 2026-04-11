@@ -6,6 +6,7 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.diospeechai.transcription.cache.CacheService;
 import com.example.diospeechai.transcription.dto.TranscriptionResponse;
 import com.example.diospeechai.transcription.dto.WhisperResponse;
 import com.example.diospeechai.transcription.exception.TranscriptionException;
@@ -15,25 +16,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Orquestra o fluxo de transcrição: validação → MDC → métricas → Whisper → resposta.
- *
- * <p>Campos MDC populados por este service (complementam os do MdcLoggingFilter):
- * <ul>
- *   <li>{@code fileName} — nome original do arquivo de áudio</li>
- *   <li>{@code fileSizeBytes} — tamanho em bytes</li>
- *   <li>{@code whisperModel} — modelo utilizado (do SpeechToTextClient)</li>
- * </ul>
- *
- * <p>Esses campos aparecem como campos de primeiro nível no JSON de log em produção,
- * permitindo queries como: {@code fileName="audio.wav" AND status="success"}.
+ * Orquestra o fluxo de transcrição com cache:
+ * validação → MDC → check cache → (miss) Whisper → store cache → resposta.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class TranscriptionService {
 	
     private final SpeechToTextClient client;
     private final TranscriptionMetrics metrics;
+    private final CacheService cacheService;
     
     private static final Set<String> ALLOWED_TYPES = Set.of(
     	    "audio/wav",
@@ -59,30 +52,46 @@ public class TranscriptionService {
         metrics.recordFileSize(file.getSize());
     	
 		try {
+            byte[] fileBytes = file.getBytes();
+			
+            // ── Cache check ───────────────────────────────────────────────────
+            TranscriptionResponse cached = cacheService.get(fileBytes);
+            
+            if (cached != null) {
+                log.info("Retornando do cache | size={}bytes", file.getSize());
+                return cached.asCached();
+            }
+            
+            
 			// Timer envolve apenas a chamada ao Whisper, não a validação
 			WhisperResponse whisper = metrics.recordWhisperCall(() -> client.transcribe(file));
 
+            TranscriptionResponse response = new TranscriptionResponse(whisper.text(), file.getSize());
+			
+            // ── Store em cache ────────────────────────────────────────────────
+            cacheService.put(fileBytes, response);
+            
 			metrics.recordSuccess();
 			
             log.info("Transcrição concluída | chars={} | size={}bytes",
                     whisper.text().length(), file.getSize());			
 
-			return new TranscriptionResponse(whisper.text(), file.getSize());
+			return response;
 
 		} catch (RuntimeException ex) {
-			
 			metrics.recordError();
-			
-            log.error("Falha na transcrição | error={}", ex.getMessage());
-            
+			log.error("Falha na transcrição | error={}", ex.getMessage());
 			throw ex;
-			
+		} catch (Exception ex) {
+			metrics.recordError();
+			log.error("Falha ao ler bytes do arquivo | error={}", ex.getMessage());
+			throw new TranscriptionException("Falha ao processar arquivo", ex);
 		} finally {
-            // Remove os campos de negócio — o requestId permanece (limpo pelo MdcLoggingFilter)
-            MDC.remove("fileName");
-            MDC.remove("fileSizeBytes");
-            MDC.remove("whisperModel");
-        }
+			// Remove os campos de negócio — o requestId permanece (limpo pelo MdcLoggingFilter)
+			MDC.remove("fileName");
+			MDC.remove("fileSizeBytes");
+			MDC.remove("whisperModel");
+		}
 	}
 
 	// ── Validação ─────────────────────────────────────────────────────────────

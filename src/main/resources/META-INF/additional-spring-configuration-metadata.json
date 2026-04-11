@@ -8,5 +8,10 @@
     "name": "whisper.model",
     "type": "java.lang.String",
     "description": "A description for 'whisper.model'"
+  },
+  {
+    "name": "cache.transcription.ttl-hours",
+    "type": "java.lang.String",
+    "description": "A description for 'cache.transcription.ttl-hours'"
   }
 ]}

@@ -20,6 +20,11 @@ whisper:
   base-url: ${WHISPER_BASE_URL:http://localhost:8000}
   model: ${WHISPER_MODEL:Systran/faster-whisper-small}
 
+# ── Cache v2.4.0 ────────────────────────────────────────────────────────────
+cache:
+  transcription:
+    ttl-hours: ${CACHE_TTL_HOURS:24}   # TTL das transcrições no Redis  
+
 # ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
 management:
   endpoints:
