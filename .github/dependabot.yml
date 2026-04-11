@@ -1,0 +1,63 @@
+version: 2
+
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+    open-pull-requests-limit: 5
+
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "automated"
+
+    groups:
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "org.springdoc*"
+
+      observability:
+        patterns:
+          - "io.micrometer*"
+          - "io.zipkin*"
+          - "org.apache.logging*"
+
+    # evita atualizações major (possíveis breaking changes)
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+
+    open-pull-requests-limit: 5
+
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "automated"
+
+    groups:
+      infra:
+        patterns:
+          - "redis*"
+          - "prometheus*"
+          - "eclipse-temurin*"
+
+    # evita atualizações major (possíveis breaking changes)
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
