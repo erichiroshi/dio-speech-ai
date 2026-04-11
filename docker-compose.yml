@@ -3,7 +3,6 @@ services:
   # ── Speaches (Whisper) ───────────────────────────────────────────────────────
   speaches:
     container_name: speaches
-
     # imagem com suporte a CUDA
     image: ghcr.io/speaches-ai/speaches:latest-cuda
 
@@ -18,7 +17,6 @@ services:
         - linux/arm64
 
     restart: unless-stopped
-
     ports:
       - "8000:8000"
 
@@ -57,6 +55,30 @@ services:
       retries: 3
       start_period: 5s
 
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  # v2.3.0 — cache de transcrições por hash SHA-256 (implementado em v2.4.0)
+  redis:
+    container_name: redis
+    image: redis:8-alpine
+    restart: unless-stopped
+ 
+    ports:
+      - "6379:6379"   # exposto apenas para inspeção local (redis-cli)
+ 
+    volumes:
+      - redis_data:/data
+ 
+    command: redis-server --appendonly yes   # persistência AOF
+ 
+    networks:
+      - backend
+ 
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # ── API Spring Boot ──────────────────────────────────────────────────────────
   dio-speaches-ai:
     container_name: dio-speaches-ai
@@ -71,8 +93,13 @@ services:
     environment:
       WHISPER_BASE_URL: http://speaches:8000
       WHISPER_MODEL: Systran/faster-whisper-small
+      REDIS_HOST: redis         # aponta para o serviço redis na rede interna
+      REDIS_PORT: 6379
+
     depends_on:
       speaches:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
     networks:
@@ -124,6 +151,7 @@ services:
 volumes:
   hf-hub-cache:
   prometheus_data:
+  redis_data:
 
 networks:
   backend:

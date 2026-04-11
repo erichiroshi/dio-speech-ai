@@ -7,9 +7,18 @@ spring:
       max-file-size: 5MB
       max-request-size: 5MB
 
+  # ── Cache v2.3.0 ────────────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # timeout de conexão/leitura — falha rápida, não bloqueia o request
+      connect-timeout: 2s
+      timeout: 2s			
+
 whisper:
-  base-url: ${WHISPER_BASE_URL}
-  model: ${WHISPER_MODEL}
+  base-url: ${WHISPER_BASE_URL:http://localhost:8000}
+  model: ${WHISPER_MODEL:Systran/faster-whisper-small}
 
 # ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
 management:
