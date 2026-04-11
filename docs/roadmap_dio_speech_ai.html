@@ -140,7 +140,8 @@ const phases = [
         title: "2.3 — Redis no Docker Compose",
         desc: "Subir container Redis e configurar Spring Data Redis na aplicação",
         tags: ["Redis", "Docker Compose", "Spring Data Redis"],
-        done: false,
+        done: true,
+        version: "v2.3.0",
         detail: "Adicionar serviço redis no compose.yaml. Adicionar dependência spring-boot-starter-data-redis. Configurar RedisTemplate com serializer Jackson. Expor porta 6379 apenas na rede backend.",
         snippet: "# docker-compose.yml\nredis:\n  image: redis:7-alpine\n  healthcheck:\n    test: [\"CMD\",\"redis-cli\",\"ping\"]\n\n// build.gradle\nimplementation 'org.springframework.boot:spring-boot-starter-data-redis'"
       },

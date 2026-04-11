@@ -55,6 +55,7 @@ O projeto demonstra integração com IA generativa a partir de uma stack Java mo
 - [🔧 Variáveis de ambiente](#-variáveis-de-ambiente)
 - [📁 Estrutura do projeto](#-estrutura-do-projeto)
 - [⚠️ Troubleshooting](#️-troubleshooting)
+- [🔄 Atualizações de dependências](#-atualizações-de-dependências)
 - [Autor](#autor)
 - [📄 Licença](#-licença)
 
@@ -485,6 +486,13 @@ Dentro do Docker, serviços se comunicam pelo nome definido no Compose:
 O `prometheus-dev.yml` aponta para `host.docker.internal:8080`. Certifique-se de que:
 1. A aplicação está rodando na porta `8080`
 2. O Docker tem permissão de acessar o host (padrão no Docker Desktop)
+
+---
+
+## 🔄 Atualizações de dependências
+
+Este projeto utiliza Dependabot para manter dependências atualizadas automaticamente.
+Atualizações são revisadas antes do merge para garantir compatibilidade.
 
 ---
 
