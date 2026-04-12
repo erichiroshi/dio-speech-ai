@@ -149,7 +149,8 @@ const phases = [
         title: "2.4 — Cache por hash SHA-256",
         desc: "Calcular hash do arquivo e cachear transcrição em transcription:{hash}",
         tags: ["SHA-256", "Redis", "Cache"],
-        done: false,
+        done: true,
+        version: "v2.4.0",
         detail: "Criar CacheService que calcula SHA-256 do byte[] antes de enviar ao Whisper. Chave Redis: transcription:{sha256hex}. TTL configurável. Hit → retorna imediatamente com cached:true. Miss → transcreve, armazena, retorna.",
         snippet: "String hash = DigestUtils.sha256Hex(file.getBytes());\nString key = \"transcription:\" + hash;\nTranscriptionResponse cached = redisTemplate.opsForValue().get(key);\nif (cached != null) return cached.withCached(true);\n\n// após transcrever:\nredisTemplate.opsForValue().set(key, response, Duration.ofHours(24));"
       },
@@ -157,7 +158,8 @@ const phases = [
         title: "2.5 — Métricas customizadas de cache",
         desc: "Contadores cache.hit / cache.miss integrados ao TranscriptionMetrics",
         tags: ["Micrometer", "Counter", "Cache"],
-        done: false,
+        done: true,
+        version: "v2.5.0",
         detail: "Expandir TranscriptionMetrics com: Counter transcription.cache{result=hit}, Counter transcription.cache{result=miss}. Adicionar tag 'model' nas métricas do Whisper. Cache hit ratio visível no Prometheus: hits/(hits+misses).",
         snippet: "Counter hitCounter = Counter.builder(\"transcription.cache\")\n    .tag(\"result\",\"hit\").register(registry);\nCounter missCounter = Counter.builder(\"transcription.cache\")\n    .tag(\"result\",\"miss\").register(registry);\n\n// Prometheus query:\n// rate(transcription_cache_total{result=\"hit\"}[1m])"
       },

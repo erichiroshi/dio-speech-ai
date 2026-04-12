@@ -17,6 +17,7 @@ import io.micrometer.core.instrument.Timer;
  *   <li>{@code transcription.requests.total} — contador total de requisições (tag: status=success|error)</li>
  *   <li>{@code transcription.whisper.duration} — timer das chamadas ao Whisper (p50/p95/p99)</li>
  *   <li>{@code transcription.file.size.bytes} — distribuição dos tamanhos de arquivo processados</li>
+ *   <li>{@code transcription.cache.total{result=hit|miss}} — v2.5.0: contadores de cache</li>
  * </ul>
  *
  * <p>Todas as métricas carregam a tag {@code application} herdada da configuração global
@@ -25,16 +26,20 @@ import io.micrometer.core.instrument.Timer;
 @Component
 public class TranscriptionMetrics {
 
-    // ── Contadores ────────────────────────────────────────────────────────────
+    // ── Requisições  ────────────────────────────────────────────────────────────
     private final Counter successCounter;
     private final Counter errorCounter;
 
-    // ── Timer ─────────────────────────────────────────────────────────────────
+    // ── Whisper Timer ───────────────────────────────────────────────────────────
     private final Timer whisperTimer;
 
-    // ── Distribuição ──────────────────────────────────────────────────────────
+    // ── Arquivo  ────────────────────────────────────────────────────────────
     private final DistributionSummary fileSizeSummary;
 
+    // ── Cache v2.5.0 ──────────────────────────────────────────────────────────
+    private final Counter cacheHitCounter;
+    private final Counter cacheMissCounter;    
+    
     public TranscriptionMetrics(MeterRegistry registry) {
 
         this.successCounter = Counter.builder("transcription.requests.total")
@@ -53,11 +58,20 @@ public class TranscriptionMetrics {
                 .publishPercentileHistogram()
                 .register(registry);
 
-        this.fileSizeSummary = DistributionSummary
-                .builder("transcription.file.size.bytes")
+        this.fileSizeSummary = DistributionSummary.builder("transcription.file.size.bytes")
                 .description("Distribuição dos tamanhos dos arquivos de áudio enviados")
                 .baseUnit("bytes")
                 .register(registry);
+        
+        this.cacheHitCounter = Counter.builder("transcription.cache.total")
+                .tag("result", "hit")
+                .description("Total de requisições servidas do cache Redis")
+                .register(registry);
+ 
+        this.cacheMissCounter = Counter.builder("transcription.cache.total")
+                .tag("result", "miss")
+                .description("Total de requisições que não encontraram cache (chamaram o Whisper)")
+                .register(registry);        
     }
 
     // ── API pública ───────────────────────────────────────────────────────────
@@ -69,6 +83,14 @@ public class TranscriptionMetrics {
     public void recordError() {
         errorCounter.increment();
     }
+    
+	public void recordCacheHit() {
+		cacheHitCounter.increment();
+	}
+
+	public void recordCacheMiss() {
+		cacheMissCounter.increment();
+	}   
 
     /**
      * Executa {@code task} dentro do timer do Whisper.

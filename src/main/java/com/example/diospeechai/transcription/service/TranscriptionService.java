@@ -58,10 +58,12 @@ public class TranscriptionService {
             TranscriptionResponse cached = cacheService.get(fileBytes);
             
             if (cached != null) {
+                metrics.recordCacheHit();
                 log.info("Retornando do cache | size={}bytes", file.getSize());
                 return cached.asCached();
             }
             
+            metrics.recordCacheMiss();
             
 			// Timer envolve apenas a chamada ao Whisper, não a validação
 			WhisperResponse whisper = metrics.recordWhisperCall(() -> client.transcribe(file));
