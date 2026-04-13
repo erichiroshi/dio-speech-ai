@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- ──────────────────────────────────────────────────────────────────
+	<!--  Resolve propriedade do Spring Environment corretamente  -->
+	<springProperty scope="context" name="appName"
+		source="spring.application.name" defaultValue="dio-speech-ai" />
+
+	<!-- ──────────────────────────────────────────────────────────────────
          Perfil PROD / padrão — JSON estruturado para ingestão em Loki,
          Elasticsearch ou qualquer agregador de logs.
 
@@ -9,66 +13,69 @@
          é promovido a campo de primeiro nível no JSON, facilitando
          queries e alertas sem precisar parsear texto.
     ─────────────────────────────────────────────────────────────────── -->
-    <springProfile name="!dev">
-        <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+	<springProfile name="!dev">
+		<appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+			<encoder class="net.logstash.logback.encoder.LogstashEncoder">
 
-                <!-- Campos MDC promovidos ao nível raiz do JSON -->
-                <includeMdcKeyName>requestId</includeMdcKeyName>
-                <includeMdcKeyName>fileName</includeMdcKeyName>
-                <includeMdcKeyName>fileSizeBytes</includeMdcKeyName>
-                <includeMdcKeyName>whisperModel</includeMdcKeyName>
+				<!-- Campos MDC promovidos ao nível raiz do JSON -->
+				<includeMdcKeyName>requestId</includeMdcKeyName>
+				<includeMdcKeyName>fileName</includeMdcKeyName>
+				<includeMdcKeyName>fileSizeBytes</includeMdcKeyName>
+				<includeMdcKeyName>whisperModel</includeMdcKeyName>
+				<includeMdcKeyName>traceId</includeMdcKeyName>
+				<includeMdcKeyName>spanId</includeMdcKeyName>
 
-                <!-- Substitui o campo padrão "logger_name" por "logger" (mais curto) -->
-                <fieldNames>
-                    <logger>logger</logger>
-                    <thread>thread</thread>
-                    <levelValue>[ignore]</levelValue>
-                </fieldNames>
+				<!-- Substitui o campo padrão "logger_name" por "logger" (mais
+				curto) -->
+				<fieldNames>
+					<logger>logger</logger>
+					<thread>thread</thread>
+					<levelValue>[ignore]</levelValue>
+				</fieldNames>
 
-                <!-- Versão customizada do campo @version para rastreabilidade -->
-                <customFields>{"app":"dio-speech-ai","version":"2.2.0"}</customFields>
+				<!-- Versão customizada do campo @version para rastreabilidade -->
+				<customFields>{"app":"dio-speech-ai","version":"2.2.0"}</customFields>
 
-                <!-- Suprime campos redundantes no JSON -->
-                <includeContext>false</includeContext>
+				<!-- Suprime campos redundantes no JSON -->
+				<includeContext>false</includeContext>
 
-            </encoder>
-        </appender>
+			</encoder>
+		</appender>
 
-        <root level="INFO">
-            <appender-ref ref="JSON_STDOUT"/>
-        </root>
+		<root level="INFO">
+			<appender-ref ref="JSON_STDOUT" />
+		</root>
 
-        <!-- Reduzir ruído de frameworks em produção -->
-        <logger name="org.springframework" level="WARN"/>
-        <logger name="reactor.netty"       level="WARN"/>
-        <logger name="io.netty"            level="WARN"/>
-    </springProfile>
+		<!-- Reduzir ruído de frameworks em produção -->
+		<logger name="org.springframework" level="WARN" />
+		<logger name="reactor.netty" level="WARN" />
+		<logger name="io.netty" level="WARN" />
+	</springProfile>
 
-    <!-- ──────────────────────────────────────────────────────────────────
+	<!-- ──────────────────────────────────────────────────────────────────
          Perfil DEV — texto colorido legível no terminal.
          Inclui requestId e fileName para debug sem sacrificar legibilidade.
     ─────────────────────────────────────────────────────────────────── -->
-    <springProfile name="dev">
-        <appender name="TEXT_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-                <!-- %X{campo} lê do MDC; "-" é o valor padrão se ausente -->
-                <pattern>
-                    %d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%-40logger{40}) [%X{requestId:--}] [%X{fileName:--}] - %msg%n
-                </pattern>
-            </encoder>
-        </appender>
+	<springProfile name="dev">
+		<appender name="TEXT_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<!-- %X{campo} lê do MDC; "-" é o valor padrão se ausente -->
+				<pattern>
+					%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%-40logger{40}) [%X{requestId:--}] [%X{traceId:--}] [%X{fileName:--}] - %msg%n
+				</pattern>
+			</encoder>
+		</appender>
 
-        <root level="DEBUG">
-            <appender-ref ref="TEXT_STDOUT"/>
-        </root>
+		<root level="DEBUG">
+			<appender-ref ref="TEXT_STDOUT" />
+		</root>
 
-        <!-- Reduzir ruído de frameworks em dev também -->
-        <logger name="org.springframework.web"        level="INFO"/>
-        <logger name="org.springframework.boot"       level="INFO"/>
-        <logger name="reactor.netty"                  level="INFO"/>
-        <logger name="io.netty"                       level="WARN"/>
-        <logger name="com.example.diospeechai"        level="DEBUG"/>
-    </springProfile>
+		<!-- Reduzir ruído de frameworks em dev também -->
+		<logger name="org.springframework.web" level="INFO" />
+		<logger name="org.springframework.boot" level="INFO" />
+		<logger name="reactor.netty" level="INFO" />
+		<logger name="io.netty" level="WARN" />
+		<logger name="com.example.diospeechai" level="DEBUG" />
+	</springProfile>
 
 </configuration>

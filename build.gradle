@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '2.6.0'
+version = '2.7.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -40,6 +40,13 @@ dependencies {
 	// ── Cache v2.3.0 ────────────────────────────────────────────────────────
 	// Spring Data Redis (Lettuce client embutido) + serialização Jackson
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	
+	// ── Tracing v2.7.0 ─────────────────────────────────────────────────────
+	// Ponte Micrometer → OpenTelemetry SDK
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	// Exportador OTel → Zipkin (formato Zipkin v2 JSON sobre HTTP)
+	implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'
+	implementation 'org.springframework.boot:spring-boot-starter-zipkin'
 	
 	// ── Lombok ─────────────────────────────────────────────────────────────
 	compileOnly 'org.projectlombok:lombok'

@@ -55,9 +55,6 @@ services:
     ports:
       - "6379:6379" # exposto no host para a app local conectar
 
-    volumes:
-      - redis-dev_data:/data
-
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -80,13 +77,10 @@ services:
     volumes:
       # Arquivo de configuração com jobs de scraping
       - ./monitoring/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus-dev.yml:ro
-      - prometheus-dev_data:/prometheus
 
     command:
       - '--config.file=/etc/prometheus/prometheus-dev.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle' # permite reload via POST /-/reload
 
     healthcheck:
@@ -118,11 +112,9 @@ services:
       # Provisioning automático: datasource Prometheus + dashboard JSON
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - ./monitoring/grafana/provisioning/dashboards:/var/lib/grafana/dashboards
-      - grafana-dev_data:/var/lib/grafana
 
     depends_on:
-      prometheus:
-        condition: service_healthy
+      - prometheus
 
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
@@ -133,12 +125,29 @@ services:
     networks:
       - backend
 
+  # ── Zipkin ───────────────────────────────────────────────────────────────────
+  # app local envia traces para host.docker.internal:9411 → não funciona
+  # usar ZIPKIN_BASE_URL=http://localhost:9411 passado via env da IDE/bootRun
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin:3
+    restart: unless-stopped
+
+    ports: 
+      - "9411:9411"
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9411/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    networks: 
+      - backend
+
 volumes:
   hf-hub-cache:
-  redis-dev_data:
-  prometheus-dev_data:
-  grafana-dev_data:
-
 
 networks:
   backend:

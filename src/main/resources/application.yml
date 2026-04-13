@@ -23,7 +23,7 @@ whisper:
 # ── Cache v2.4.0 ────────────────────────────────────────────────────────────
 cache:
   transcription:
-    ttl-hours: ${CACHE_TTL_HOURS:24}   # TTL das transcrições no Redis  
+    ttl-hours: ${CACHE_TTL_HOURS:1}   # TTL das transcrições no Redis
 
 # ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
 management:
@@ -49,6 +49,17 @@ management:
     # Tags globais adicionadas a TODAS as métricas desta aplicação
     tags:
       application: ${spring.application.name}
+
+  # ── Tracing v2.7.0 ──────────────────────────────────────────────────────
+  tracing:
+    sampling:
+      # 100% das requisições tracejadas em prod (ajustar para 0.1 em alta carga)
+      probability: ${TRACING_SAMPLING:1.0}
+ 
+# ── Zipkin v2.7.0 ──────────────────────────────────────────────────────────
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_BASE_URL:http://localhost:9411/api/v2/spans}
 
 # ── Logging v2.2.0 ──────────────────────────────────────────────────────────
 # O logback-spring.xml controla o formato (JSON em prod, texto em dev).

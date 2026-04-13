@@ -95,8 +95,11 @@ services:
     environment:
       WHISPER_BASE_URL: http://speaches:8000
       WHISPER_MODEL: Systran/faster-whisper-small
-      REDIS_HOST: redis # aponta para o serviço redis na rede interna
+      REDIS_HOST: redis
       REDIS_PORT: 6379
+      CACHE_TTL_HOURS: 24
+      TRACING_SAMPLING: 1.0
+      ZIPKIN_BASE_URL: http://zipkin:9411/api/v2/spans
 
     depends_on:
       speaches:
@@ -181,6 +184,26 @@ services:
       retries: 3
 
     networks:
+      - backend
+
+# ── Zipkin ───────────────────────────────────────────────────────────────────
+# v2.7.0 — coleta e visualiza traces distribuídos (OpenTelemetry → Zipkin)
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin:latest
+    restart: unless-stopped
+
+    ports:
+      - "9411:9411"   # UI + API: http://localhost:9411
+
+    healthcheck:
+       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9411/health"]
+       interval: 20s
+       timeout: 10s
+       retries: 3
+       start_period: 10s
+
+    networks: 
       - backend
 
 volumes:
