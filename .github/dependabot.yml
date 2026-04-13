@@ -15,6 +15,7 @@ updates:
     labels:
       - "dependencies"
       - "automated"
+      - "java"
 
     groups:
       spring:
@@ -48,6 +49,7 @@ updates:
     labels:
       - "dependencies"
       - "automated"
+      - "docker"
 
     groups:
       infra:

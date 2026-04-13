@@ -167,7 +167,8 @@ const phases = [
         title: "2.6 — Grafana + dashboards",
         desc: "Dashboard com: req/s, latência p50/p95/p99, cache hit rate, erros",
         tags: ["Grafana", "Prometheus", "Dashboard"],
-        done: false,
+        done: true,
+        version: "v2.6.0",
         detail: "Adicionar serviço grafana no compose.yaml com provisioning automático via volumes. Datasource prometheus.yaml apontando para http://prometheus:9090. Dashboard JSON com: throughput (req/min), percentis de latência, cache hit ratio, distribuição de tamanhos.",
         snippet: "# docker-compose.yml\ngrafana:\n  image: grafana/grafana\n  volumes:\n    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning\n  ports: [\"3000:3000\"]"
       },
