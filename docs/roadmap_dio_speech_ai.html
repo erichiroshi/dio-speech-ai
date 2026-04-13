@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -88,7 +89,7 @@
 
     <div class="legend">
       <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 1 — concluída (v1.0.0)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — observabilidade &amp; cache (em andamento)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — concluída (v2.7.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — resiliência &amp; segurança</div>
     </div>
 
@@ -116,7 +117,7 @@ const phases = [
   {
     id: 2, label: "Fase 2", title: "Observabilidade + Cache",
     color: "#185FA5", badgeBg: "#0a1929", badgeColor: "#60a5fa",
-    version: null, taskCount: 7, done: false,
+    version: "v2.7.0", taskCount: 7, done: true,
     tasks: [
       {
         title: "2.1 — Micrometer + Prometheus",
@@ -176,7 +177,8 @@ const phases = [
         title: "2.7 — Tracing com Zipkin (OpenTelemetry)",
         desc: "Trace IDs por todo fluxo: controller → service → redis → whisper",
         tags: ["Zipkin", "OpenTelemetry", "Micrometer Tracing"],
-        done: false,
+        done: true,
+        version: "v2.7.0",
         detail: "Adicionar micrometer-tracing-bridge-otel e opentelemetry-exporter-zipkin. Container zipkin no compose. Sampling 100% em dev. O trace_id aparece automaticamente nos logs JSON via MDC.",
         snippet: "// build.gradle\nimplementation 'io.micrometer:micrometer-tracing-bridge-otel'\nimplementation 'io.opentelemetry:opentelemetry-exporter-zipkin'\n\n// application.yml\nmanagement.tracing.sampling.probability: 1.0\nzipkin.base-url: http://zipkin:9411"
       }
