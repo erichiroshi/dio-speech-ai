@@ -211,7 +211,8 @@ const phases = [
         title: "3.3 — Métricas de resiliência",
         desc: "Estado do circuit breaker e tentativas de retry no Prometheus",
         tags: ["Micrometer", "Resilience4j", "Prometheus"],
-        done: false,
+        done: true,
+        version: "v3.3.0",
         detail: "Resilience4j integra automaticamente com Micrometer. Métricas: resilience4j_circuitbreaker_state (CLOSED/OPEN/HALF_OPEN), _calls_total, resilience4j_retry_calls_total. Painel Grafana: gauge do estado do CB + taxa de retries.",
         snippet: "# Prometheus\nresilience4j_circuitbreaker_state{name=\"whisper\"}\nrate(resilience4j_circuitbreaker_calls_total{name=\"whisper\",kind=\"failed\"}[1m])"
       },

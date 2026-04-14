@@ -519,7 +519,7 @@
           "legendFormat": "failed/min"
         },
         {
-          "expr": "rate(resilience4j_circuitbreaker_calls_seconds_count{name=\"whisper\",kind=\"not_permitted\"}[1m]) * 60",
+          "expr": "rate(resilience4j_circuitbreaker_not_permitted_calls_total{name=\"whisper\"}[1m]) * 60",
           "legendFormat": "not_permitted/min (OPEN)"
         }
       ]

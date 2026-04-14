@@ -238,16 +238,163 @@
         "expr": "sum(rate(transcription_cache_total{result=\"hit\"}[5m])) / (sum(rate(transcription_cache_total{result=\"hit\"}[5m])) + sum(rate(transcription_cache_total{result=\"miss\"}[5m])) + 0.0001)",
         "legendFormat": "hit ratio"
       }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 103,
+      "title": "Resiliência — Circuit Breaker & Retry",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "CLOSED"
+                },
+                "1": {
+                  "text": "OPEN"
+                },
+                "2": {
+                  "text": "HALF_OPEN"
+                }
+              },
+              "type": "value"
+            }
+          ]
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+      },
+      "id": 30,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "title": "Estado Circuit Breaker (whisper)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "resilience4j_circuitbreaker_state{name=\"whisper\"}",
+          "legendFormat": "state"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "id": 31,
+      "title": "Circuit Breaker — chamadas por tipo",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(resilience4j_circuitbreaker_calls_seconds_count{name=\"whisper\",kind=\"successful\"}[1m]) * 60",
+          "legendFormat": "successful/min"
+        },
+        {
+          "expr": "rate(resilience4j_circuitbreaker_calls_seconds_count{name=\"whisper\",kind=\"failed\"}[1m]) * 60",
+          "legendFormat": "failed/min"
+        },
+        {
+          "expr": "rate(resilience4j_circuitbreaker_not_permitted_calls_total{name=\"whisper\"}[1m]) * 60",
+          "legendFormat": "not_permitted/min (OPEN)"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 32,
+      "title": "Retry — chamadas com retry",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(resilience4j_retry_calls_total{name=\"whisper\",kind=\"successful_with_retry\"}[1m]) * 60",
+          "legendFormat": "recovered via retry/min"
+        },
+        {
+          "expr": "rate(resilience4j_retry_calls_total{name=\"whisper\",kind=\"failed_with_retry\"}[1m]) * 60",
+          "legendFormat": "failed after all retries/min"
+        }
+      ]
     }
   ],
   "refresh": "5s",
   "schemaVersion": 38,
-  "tags": ["dio-speech-ai", "spring-boot"],
+  "tags": ["dio-speech-ai", "spring-boot", "resilience4j"],
   "templating": { "list": [] },
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "dio-speech-ai",
   "uid": "dio-speech-ai-dashboard",
-  "version": 1
+  "version": 2
 }
