@@ -23,7 +23,7 @@ whisper:
 # ── Cache v2.4.0 ────────────────────────────────────────────────────────────
 cache:
   transcription:
-    ttl-hours: ${CACHE_TTL_HOURS:1}   # TTL das transcrições no Redis
+    ttl-hours: ${CACHE_TTL_HOURS:24}   # TTL das transcrições no Redis
 
 # ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
 management:
@@ -35,7 +35,11 @@ management:
   endpoint:
     health:
       show-details: always   # exibe detalhes de cada indicador de saúde
- 
+  
+  health:
+    circuitbreakers:
+      enabled: true 
+
   # Habilita histogramas de percentil para latência HTTP
   # Permite queries p50, p95, p99 no Prometheus/Grafana
   metrics:
@@ -60,6 +64,27 @@ management:
     export:
       zipkin:
         endpoint: ${ZIPKIN_BASE_URL:http://localhost:9411/api/v2/spans}
+
+# ── Resiliência v3.1.0 ──────────────────────────────────────────────────────
+resilience4j:
+  circuitbreaker:
+    instances:
+      whisper:
+        # Janela deslizante: conta as últimas 10 chamadas
+        slidingWindowSize: 10
+        # Abre o circuito se ≥ 50% das chamadas falharem
+        failureRateThreshold: 50
+        # Permanece aberto por 30s antes de tentar HALF_OPEN
+        waitDurationInOpenState: 30s
+        # Permite 3 chamadas de teste no estado HALF_OPEN
+        permittedNumberOfCallsInHalfOpenState: 3
+        # Mínimo de chamadas antes de calcular a taxa de falha
+        minimumNumberOfCalls: 5
+        # Expõe estado no /actuator/health
+        registerHealthIndicator: true
+        # Considera lentidão > 10s como falha
+        slowCallDurationThreshold: 10s
+        slowCallRateThreshold: 80
 
 # ── Logging v2.2.0 ──────────────────────────────────────────────────────────
 # O logback-spring.xml controla o formato (JSON em prod, texto em dev).

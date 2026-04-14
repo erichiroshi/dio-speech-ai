@@ -24,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
  * O {@code requestId} do MDC é adicionado ao ProblemDetail como propriedade,
  * permitindo que o cliente correlacione o erro com os logs do servidor.
  */
-@RestControllerAdvice
 @Slf4j
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
 	private static final String ERROR_BASE_URI = "https://api.diospeechai/errors/";
@@ -42,7 +42,20 @@ public class GlobalExceptionHandler {
 				"transcription-exception"
 				);
 	}
-	
+
+    // ── v3.1.0 ──────────────────────────────────────────────────────────────
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ProblemDetail handleServiceUnavailable(ServiceUnavailableException ex) {
+    	
+        log.warn("Service unavailable | message={}", ex.getMessage());
+        
+        return buildProblemDetail(
+        		HttpStatus.SERVICE_UNAVAILABLE,
+        		"Service Unavailable",
+        		ex.getMessage(), 
+        		"service-unavailable");
+    }
+    
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
 
@@ -132,9 +145,7 @@ public class GlobalExceptionHandler {
 
 		pd.setTitle(title);
 		pd.setDetail(detail);
-		if (type != null) {
-			pd.setType(URI.create(ERROR_BASE_URI + type));
-		}
+		pd.setType(URI.create(ERROR_BASE_URI + type));
 		pd.setProperty("timestamp", OffsetDateTime.now(ZoneOffset.UTC));
 		
         // Inclui o requestId para correlação com os logs do servidor

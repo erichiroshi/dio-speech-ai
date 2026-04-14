@@ -193,7 +193,8 @@ const phases = [
         title: "3.1 — CircuitBreaker (Resilience4j)",
         desc: "@CircuitBreaker no SpeechToTextClient — fallback com 503",
         tags: ["Resilience4j", "CircuitBreaker"],
-        done: false,
+        done: true,
+        version: "v3.1.0",
         detail: "Adicionar spring-boot-starter-aop e resilience4j-spring-boot3. @CircuitBreaker(name='whisper') em SpeechToTextClient. Configurar: slidingWindowSize=10, failureRateThreshold=50, waitDuration=30s. Fallback: TranscriptionException com mensagem 'Whisper indisponível'.",
         snippet: "@CircuitBreaker(name = \"whisper\", fallbackMethod = \"fallback\")\npublic WhisperResponse transcribe(MultipartFile file) { ... }\n\n// application.yml\nresilience4j.circuitbreaker.instances.whisper:\n  slidingWindowSize: 10\n  failureRateThreshold: 50\n  waitDurationInOpenState: 30s"
       },
@@ -233,7 +234,7 @@ const phases = [
   }
 ];
 
-let openPhases = new Set([1, 2]);
+let openPhases = new Set([3]);
 let activeTask = null;
 
 function renderPhases() {

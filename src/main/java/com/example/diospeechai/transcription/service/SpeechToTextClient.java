@@ -12,20 +12,23 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import com.example.diospeechai.transcription.dto.WhisperResponse;
+import com.example.diospeechai.transcription.exception.ServiceUnavailableException;
 import com.example.diospeechai.transcription.exception.TranscriptionException;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cliente HTTP para o serviço Speaches (Whisper).
+ * Cliente HTTP para o Speaches (Whisper) protegido por CircuitBreaker.
  *
- * <p>Responsabilidade única: fazer a chamada HTTP multipart para
- * {@code POST /v1/audio/transcriptions} e mapear erros para
- * {@link TranscriptionException}.
+ * <p>v3.1.0: {@code @CircuitBreaker(name = "whisper")} envolve a chamada HTTP.
+ * Quando o circuito está OPEN, o fallback lança {@link ServiceUnavailableException}
+ * que é mapeada para HTTP 503 pelo {@code GlobalExceptionHandler}.
  *
- * <p>Popula o campo MDC {@code whisperModel} para que o modelo utilizado
- * apareça nos logs estruturados de cada transcrição.
+ * <p>O CircuitBreaker abre quando ≥ 50% das últimas 10 chamadas falham
+ * (configurável em {@code application.yml → resilience4j.circuitbreaker.instances.whisper}).
  */
 @Component
 @Slf4j
@@ -44,6 +47,7 @@ public class SpeechToTextClient {
 				.build();
 	}
 	
+    @CircuitBreaker(name = "whisper", fallbackMethod = "fallback")
     public WhisperResponse transcribe(MultipartFile file) {
     	
         // Registra o modelo no MDC — visível nos logs do TranscriptionService também
@@ -79,4 +83,18 @@ public class SpeechToTextClient {
 			throw new TranscriptionException("Falha na comunicação com Whisper", ex);
 		}
 	}
+    
+    /**
+     * Fallback invocado quando o CircuitBreaker está OPEN ou quando
+     * todas as tentativas falharam.
+     *
+     * <p>A assinatura deve ter os mesmos parâmetros do método principal
+     * mais um parâmetro {@code Exception} no final.
+     * @throws ServiceUnavailableException 
+     */
+    public WhisperResponse fallback(MultipartFile file, Exception ex) {
+		log.warn("CircuitBreaker OPEN — Whisper indisponível | cause={}", file, ex.getMessage(), file);
+        throw new ServiceUnavailableException(
+                "Serviço de transcrição temporariamente indisponível. Tente novamente em instantes.");
+    }
 }
