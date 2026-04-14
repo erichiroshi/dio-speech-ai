@@ -70,19 +70,15 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     restart: unless-stopped
-
+    user: root
+    
     ports:
       - "9090:9090" # UI: http://localhost:9090
 
     volumes:
-      # Arquivo de configuração com jobs de scraping
-      - ./monitoring/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus-dev.yml:ro
-
-    command:
-      - '--config.file=/etc/prometheus/prometheus-dev.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-lifecycle' # permite reload via POST /-/reload
-
+      - ./monitoring/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+    tmpfs: /prometheus
+    
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy" ]
       interval: 30s

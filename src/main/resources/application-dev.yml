@@ -11,7 +11,11 @@ spring:
 cache:
   transcription:
     ttl-hours: 1
- 
+
+jwt:
+  secret: dev-insecure-secret-change-in-production-min-256-bits
+  expiration-hours: 24   # token longo em dev para não expirar durante testes
+
 management:
   tracing:
     sampling:
@@ -38,3 +42,4 @@ logging:
     root: INFO
     '[com.example.diospeechai]': DEBUG
     '[io.github.resilience4j]': DEBUG
+    '[org.springframework.security]': DEBUG

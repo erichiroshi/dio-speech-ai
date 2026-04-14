@@ -25,6 +25,14 @@ cache:
   transcription:
     ttl-hours: ${CACHE_TTL_HOURS:24}   # TTL das transcrições no Redis
 
+# ── Segurança v3.4.0 ────────────────────────────────────────────────────────
+jwt:
+  # ATENÇÃO: em produção use uma variável de ambiente forte (≥256 bits)
+  # Gerar: openssl rand -hex 32
+  secret: ${JWT_SECRET:dev-insecure-secret-change-in-production-min-256-bits}
+  # Expiração em horas
+  expiration-hours: ${JWT_EXPIRATION_HOURS:8}
+
 # ── Observabilidade v2.1.0 ──────────────────────────────────────────────────
 management:
   endpoints:

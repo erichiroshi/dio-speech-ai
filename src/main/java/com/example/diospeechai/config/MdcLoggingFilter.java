@@ -1,4 +1,4 @@
-package com.example.diospeechai.transcription.config;
+package com.example.diospeechai.config;
 
 import java.io.IOException;
 import java.util.UUID;

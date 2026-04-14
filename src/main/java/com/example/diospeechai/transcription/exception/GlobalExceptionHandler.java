@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.example.diospeechai.security.JwtValidationException;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,7 +57,20 @@ public class GlobalExceptionHandler {
         		ex.getMessage(), 
         		"service-unavailable");
     }
-    
+
+    // ── v3.4.0 ──────────────────────────────────────────────────────────────
+    @ExceptionHandler(JwtValidationException.class)
+    public ProblemDetail handleJwtValidation(JwtValidationException ex) {
+    	
+        log.warn("JWT validation failed | reason={}", ex.getMessage());
+        
+        return buildProblemDetail(
+        		HttpStatus.UNAUTHORIZED,
+        		"Unauthorized",
+        		ex.getMessage(), 
+        		"unauthorized");
+    }
+
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '3.3.0'
+version = '3.4.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -28,6 +28,7 @@ ext{
 	logbackencoderVersion = '9.0'
 	aopVersion = '3.5.13'
 	resilience4jVersion = '2.4.0'
+	jwtVersion = '9.37.3'
 }
 
 dependencies {
@@ -59,7 +60,12 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-aop:${aopVersion}"
 	// Resilience4j com autoconfigure para Spring Boot 4
 	implementation "io.github.resilience4j:resilience4j-spring-boot4:${resilience4jVersion}"
-	
+
+	// ── Segurança v3.4.0 ────────────────────────────────────────────────────
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// Nimbus JOSE + JWT — parsing e validação de tokens JWT/JWS
+	implementation "com.nimbusds:nimbus-jose-jwt:${jwtVersion}"
+		
 	// ── Lombok ─────────────────────────────────────────────────────────────
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
