@@ -25,6 +25,13 @@ resilience4j:
         slidingWindowSize: 5
         minimumNumberOfCalls: 3
         waitDurationInOpenState: 10s
+
+  retry:
+    instances:
+      whisper:
+        maxAttempts: 2
+        waitDuration: 200ms
+        enableExponentialBackoff: false   # espera fixa em dev
  
 logging:
   level:

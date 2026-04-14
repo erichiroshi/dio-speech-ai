@@ -202,7 +202,8 @@ const phases = [
         title: "3.2 — Retry com backoff exponencial",
         desc: "@Retry no cliente Whisper: 3 tentativas, backoff 500ms → 2s",
         tags: ["Resilience4j", "Retry", "Backoff"],
-        done: false,
+        done: true,
+        version: "v3.2.0",
         detail: "@Retry junto com @CircuitBreaker (ordem importa: Retry wraps CB). maxAttempts=3, waitDuration=500ms, exponentialBackoff multiplier=2. Retry apenas em TranscriptionException, não em IllegalArgumentException.",
         snippet: "// application.yml\nresilience4j.retry.instances.whisper:\n  maxAttempts: 3\n  waitDuration: 500ms\n  enableExponentialBackoff: true\n  exponentialBackoffMultiplier: 2\n  retryExceptions:\n    - TranscriptionException"
       },

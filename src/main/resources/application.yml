@@ -38,8 +38,8 @@ management:
   
   health:
     circuitbreakers:
-      enabled: true 
-
+      enabled: true
+    
   # Habilita histogramas de percentil para latência HTTP
   # Permite queries p50, p95, p99 no Prometheus/Grafana
   metrics:
@@ -65,7 +65,7 @@ management:
       zipkin:
         endpoint: ${ZIPKIN_BASE_URL:http://localhost:9411/api/v2/spans}
 
-# ── Resiliência v3.1.0 ──────────────────────────────────────────────────────
+# ── Resiliência v3.1.0 / v3.2.0 ─────────────────────────────────────────────
 resilience4j:
   circuitbreaker:
     instances:
@@ -85,6 +85,27 @@ resilience4j:
         # Considera lentidão > 10s como falha
         slowCallDurationThreshold: 10s
         slowCallRateThreshold: 80
+
+# ── Retry v3.2.0 ──────────────────────────────────────────────────────────
+  retry:
+    instances:
+      whisper:
+        # 3 tentativas totais (1 original + 2 retries)
+        maxAttempts: 3
+        # Espera inicial entre tentativas
+        waitDuration: 500ms
+        # Backoff exponencial: 500ms → 1s → 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        # Limite máximo do backoff — evita espera infinita
+        exponentialMaxWaitDuration: 4s
+        # Retry APENAS em erros de I/O — não em erros de validação do cliente
+        retryExceptions:
+          - com.example.diospeechai.transcription.exception.TranscriptionException
+        # Nunca fazer retry em erros de negócio/validação
+        ignoreExceptions:
+          - com.example.diospeechai.transcription.exception.ServiceUnavailableException
+          - java.lang.IllegalArgumentException
 
 # ── Logging v2.2.0 ──────────────────────────────────────────────────────────
 # O logback-spring.xml controla o formato (JSON em prod, texto em dev).

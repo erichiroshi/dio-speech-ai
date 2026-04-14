@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 import com.example.diospeechai.transcription.dto.WhisperResponse;
 import com.example.diospeechai.transcription.exception.ServiceUnavailableException;
@@ -21,14 +22,24 @@ import com.example.diospeechai.transcription.exception.TranscriptionException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cliente HTTP para o Speaches (Whisper) protegido por CircuitBreaker.
+ * Cliente HTTP para o Speaches protegido por Retry + CircuitBreaker.
  *
- * <p>v3.1.0: {@code @CircuitBreaker(name = "whisper")} envolve a chamada HTTP.
- * Quando o circuito está OPEN, o fallback lança {@link ServiceUnavailableException}
- * que é mapeada para HTTP 503 pelo {@code GlobalExceptionHandler}.
+ * <p>v3.2.0: {@code @Retry} é adicionado acima de {@code @CircuitBreaker}.
+ * A ordem das anotações define a cadeia de decoração (de dentro para fora):
+ * <pre>
+ *   Retry ( CircuitBreaker ( SpeechToTextClient.transcribe() ) )
+ * </pre>
  *
- * <p>O CircuitBreaker abre quando ≥ 50% das últimas 10 chamadas falham
- * (configurável em {@code application.yml → resilience4j.circuitbreaker.instances.whisper}).
+ * <p>Fluxo de falha:
+ * <ol>
+ *   <li>Chamada falha com {@link TranscriptionException} (erro de I/O)</li>
+ *   <li>Retry tenta novamente com backoff exponencial (500ms → 1s → 2s)</li>
+ *   <li>Se ainda falhar após 3 tentativas, o CircuitBreaker registra a falha</li>
+ *   <li>Quando o CB abre, o fallback lança {@link ServiceUnavailableException} → 503</li>
+ * </ol>
+ *
+ * <p>Retry NÃO ocorre para {@link ServiceUnavailableException} (CB aberto)
+ * nem para {@link IllegalArgumentException} (erros de validação).
  */
 @Component
 @Slf4j
@@ -47,6 +58,7 @@ public class SpeechToTextClient {
 				.build();
 	}
 	
+    @Retry(name = "whisper", fallbackMethod = "fallback")
     @CircuitBreaker(name = "whisper", fallbackMethod = "fallback")
     public WhisperResponse transcribe(MultipartFile file) {
     	
@@ -92,8 +104,8 @@ public class SpeechToTextClient {
      * mais um parâmetro {@code Exception} no final.
      * @throws ServiceUnavailableException 
      */
-    public WhisperResponse fallback(MultipartFile file, Exception ex) {
-		log.warn("CircuitBreaker OPEN — Whisper indisponível | cause={}", file, ex.getMessage(), file);
+    WhisperResponse fallback(MultipartFile file, Exception ex) {
+        log.warn("Fallback ativado | cause={}", ex.getMessage(), file);
         throw new ServiceUnavailableException(
                 "Serviço de transcrição temporariamente indisponível. Tente novamente em instantes.");
     }

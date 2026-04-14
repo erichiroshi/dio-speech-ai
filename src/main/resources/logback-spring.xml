@@ -34,7 +34,7 @@
 				</fieldNames>
 
 				<!-- Versão customizada do campo @version para rastreabilidade -->
-				<customFields>{"app":"dio-speech-ai","version":"2.2.0"}</customFields>
+				<customFields>{"app":"dio-speech-ai","version":"3.2.0"}</customFields>
 
 				<!-- Suprime campos redundantes no JSON -->
 				<includeContext>false</includeContext>

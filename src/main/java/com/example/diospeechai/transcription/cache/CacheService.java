@@ -71,7 +71,7 @@ public class CacheService {
     }
 
     /** Computa a chave Redis a partir do SHA-256 do conteúdo do arquivo. */
-    public String buildKey(byte[] fileBytes) {
+    private String buildKey(byte[] fileBytes) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(fileBytes);
