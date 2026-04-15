@@ -90,7 +90,7 @@
     <div class="legend">
       <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 1 — concluída (v1.0.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — concluída (v2.7.0)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — resiliência &amp; segurança</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — concluída (v3.4.0)</div>
     </div>
 
     <div id="phases"></div>
@@ -187,7 +187,8 @@ const phases = [
   {
     id: 3, label: "Fase 3", title: "Resiliência + Segurança (JWT)",
     color: "#7F77DD", badgeBg: "#1a1640", badgeColor: "#a5b4fc",
-    version: null, taskCount: 5, done: false,
+    version: null, taskCount: 5, done: true,
+    version: "v3.5.0",
     tasks: [
       {
         title: "3.1 — CircuitBreaker (Resilience4j)",
@@ -220,7 +221,8 @@ const phases = [
         title: "3.4 — Spring Security + JWT",
         desc: "Filtro JWT stateless — /api/transcriptions exige ROLE_USER",
         tags: ["Spring Security", "JWT", "Stateless"],
-        done: false,
+        done: true,
+        version: "v3.4.0",
         detail: "spring-boot-starter-security + nimbus-jose-jwt. JwtAuthFilter extends OncePerRequestFilter. SecurityFilterChain: SESSION=STATELESS, /actuator/health e /auth/token públicos. Endpoint POST /auth/token (dev) gera token com sub, roles, exp.",
         snippet: "@Bean SecurityFilterChain chain(HttpSecurity http) {\n  return http\n    .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))\n    .authorizeHttpRequests(a -> a\n      .requestMatchers(\"/actuator/health\",\"/auth/token\").permitAll()\n      .anyRequest().authenticated())\n    .addFilterBefore(jwtFilter, ...)\n    .csrf(AbstractHttpConfigurer::disable)\n    .build();\n}"
       },
@@ -228,7 +230,8 @@ const phases = [
         title: "3.5 — Testes de integração",
         desc: "Testcontainers: cache hit/miss, CB open/close, JWT válido/inválido",
         tags: ["JUnit 5", "Testcontainers", "SpringBootTest"],
-        done: false,
+        done: true,
+        version: "v3.5.0",
         detail: "Testcontainers para Redis e Zipkin. Cenários: cache hit retorna cached=true; CB abre após N falhas → 503; retry reconecta na 2ª tentativa; JWT ausente → 401; JWT expirado → 401; JWT válido → 200.",
         snippet: "@Container\nstatic RedisContainer redis = new RedisContainer(\"redis:7-alpine\");\n\n@Test void shouldReturnCachedTranscription() {\n  // 1ª chamada: miss → chama Whisper\n  // 2ª chamada: hit → Redis, cached=true\n}"
       }

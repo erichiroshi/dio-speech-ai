@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '3.4.0'
+version = '3.5.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -75,6 +75,16 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	// ── Testes v3.5.0 ───────────────────────────────────────────────────────
+	// BOM do Testcontainers — gerencia todas as versões dos módulos
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.19.8')
+	testImplementation 'org.testcontainers:testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	// Módulo Redis para Testcontainers
+	testImplementation 'com.redis:testcontainers-redis:2.2.2'
+	// MockWebServer para simular o Speaches (Whisper) nos testes
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
 
 tasks.named('test') {
