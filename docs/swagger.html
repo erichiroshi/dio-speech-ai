@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference — dio-speech-ai</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
+    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 12.5px; color: #86efac; overflow-x: auto; line-height: 1.7; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--text); font-family: 'Courier New', monospace; font-size: 12px; white-space: nowrap; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; vertical-align: middle; margin-right: 6px; font-family: 'Courier New', monospace; }
+    .post   { background: #064e3b; color: #6ee7b7; }
+    .get    { background: #1e3a5f; color: #93c5fd; }
+    .lock   { font-size: 12px; color: #fbbf24; margin-left: 4px; }
+    .open   { font-size: 12px; color: #22c55e; margin-left: 4px; }
+    .status { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 4px; font-family: 'Courier New', monospace; }
+    .s200 { background: #064e3b; color: #6ee7b7; }
+    .s400 { background: #451a03; color: #fcd34d; }
+    .s401 { background: #450a0a; color: #fca5a5; }
+    .s503 { background: #2d1b69; color: #c4b5fd; }
+    .swagger-link { display: inline-flex; align-items: center; gap: 8px; background: #1f2937; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 500; transition: 0.2s; }
+    .swagger-link:hover { background: #374151; }
+    .note { background: #111827; border-left: 3px solid #fbbf24; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Arquitetura</a>
+      <a href="observability.html">Observabilidade</a>
+      <a href="resilience.html">Resiliência</a>
+      <a href="swagger.html">API Reference</a>
+      <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
+    </nav>
+
+    <h1 style="margin: 24px 0 4px;">API Reference</h1>
+    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">
+      Documentação interativa disponível via Swagger UI quando a aplicação está em execução.
+    </p>
+
+    <!-- ── SWAGGER UI ────────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Swagger UI interativo</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:14px;">
+        Com a aplicação rodando localmente, acesse a documentação interativa:
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="swagger-link" href="http://localhost:8080/swagger-ui.html" target="_blank">
+          🔗 Swagger UI — http://localhost:8080/swagger-ui.html
+        </a>
+        <a class="swagger-link" href="http://localhost:8080/v3/api-docs" target="_blank">
+          📄 OpenAPI JSON — http://localhost:8080/v3/api-docs
+        </a>
+      </div>
+      <div class="note" style="margin-top:14px;">
+        ⚠️ Os links acima só funcionam com a aplicação em execução localmente.
+        Inicie com <code>./gradlew bootRun --args='--spring.profiles.active=dev'</code> ou
+        <code>docker compose up -d</code>.
+      </div>
+    </section>
+
+    <!-- ── AUTENTICAÇÃO ──────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Autenticação JWT</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+        Todos os endpoints (exceto os públicos) exigem um token JWT no header
+        <code>Authorization: Bearer &lt;token&gt;</code>.
+      </p>
+
+      <h3>1. Obter token</h3>
+      <pre>
+POST /auth/token
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "any"
+}
+
+# Resposta
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0..."
+}</pre>
+
+      <h3>2. Usar o token</h3>
+      <pre>
+curl -X POST http://localhost:8080/api/transcriptions \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..." \
+  -F "file=@audio.wav;type=audio/wav"</pre>
+
+      <h3>No Swagger UI</h3>
+      <ol style="color:var(--muted); font-size:13px; padding-left:20px; line-height:2;">
+        <li>Execute <code>POST /auth/token</code> para obter o token</li>
+        <li>Copie o valor do campo <code>token</code></li>
+        <li>Clique no botão <strong>Authorize 🔒</strong> no topo da página</li>
+        <li>Cole o token no campo <code>bearerAuth</code> e clique em <strong>Authorize</strong></li>
+        <li>Todas as requisições seguintes incluirão o token automaticamente</li>
+      </ol>
+    </section>
+
+    <!-- ── ENDPOINTS ─────────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Endpoints</h2>
+      <table>
+        <thead><tr><th>Método</th><th>Endpoint</th><th>Descrição</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge post">POST</span></td>
+            <td>/api/transcriptions</td>
+            <td>Transcrever arquivo de áudio (multipart/form-data)</td>
+            <td><span class="lock">🔒 ROLE_USER</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge post">POST</span></td>
+            <td>/auth/token</td>
+            <td>Gerar token JWT (apenas dev)</td>
+            <td><span class="open">🔓 público</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge get">GET</span></td>
+            <td>/actuator/health</td>
+            <td>Status da aplicação + CircuitBreaker</td>
+            <td><span class="open">🔓 público</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge get">GET</span></td>
+            <td>/actuator/prometheus</td>
+            <td>Métricas no formato Prometheus</td>
+            <td><span class="open">🔓 público</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge get">GET</span></td>
+            <td>/actuator/metrics</td>
+            <td>Lista de métricas disponíveis</td>
+            <td><span class="lock">🔒 autenticado</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge get">GET</span></td>
+            <td>/swagger-ui.html</td>
+            <td>Swagger UI interativo</td>
+            <td><span class="open">🔓 público</span></td>
+          </tr>
+          <tr>
+            <td><span class="badge get">GET</span></td>
+            <td>/v3/api-docs</td>
+            <td>Especificação OpenAPI 3.1 (JSON)</td>
+            <td><span class="open">🔓 público</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── POST /api/transcriptions ──────────────────────────────────────── -->
+    <section class="card">
+      <h2><span class="badge post">POST</span> /api/transcriptions</h2>
+
+      <h3>Request</h3>
+      <table>
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>file</td>
+            <td>File (multipart)</td>
+            <td>✅</td>
+            <td>Arquivo de áudio. Formatos: <code>audio/wav</code>, <code>audio/wave</code>, <code>audio/x-wav</code>, <code>audio/mpeg</code>. Máx: 5MB.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Respostas</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Descrição</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="status s200">200</span></td>
+            <td>Sucesso</td>
+            <td><code>{ "text": "...", "fileSizeBytes": 461842 }</code> ou com <code>"cached": true</code></td>
+          </tr>
+          <tr>
+            <td><span class="status s400">400</span></td>
+            <td>Arquivo inválido</td>
+            <td>ProblemDetail com detalhe do erro e <code>requestId</code></td>
+          </tr>
+          <tr>
+            <td><span class="status s401">401</span></td>
+            <td>Token ausente/inválido</td>
+            <td>ProblemDetail com <code>"detail": "Token JWT ausente ou inválido"</code></td>
+          </tr>
+          <tr>
+            <td><span class="status s503">503</span></td>
+            <td>Whisper indisponível</td>
+            <td>ProblemDetail — CircuitBreaker aberto. Tente novamente em ~30s.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exemplos</h3>
+      <pre>
+# Cache miss — primeiro envio
+curl -s -X POST http://localhost:8080/api/transcriptions \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@audio.wav;type=audio/wav" | jq .
+# → { "text": "testando o áudio...", "fileSizeBytes": 461842 }
+
+# Cache hit — mesmo arquivo
+curl -s -X POST http://localhost:8080/api/transcriptions \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@audio.wav;type=audio/wav" | jq .cached
+# → true
+
+# Inspecionar chaves no Redis
+docker exec -it redis redis-cli keys 'transcription:*'</pre>
+    </section>
+
+    <!-- ── FORMATO DE ERRO ────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Formato de erro (ProblemDetail — RFC 9457)</h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:10px;">
+        Todos os erros seguem o padrão RFC 9457 com campo adicional <code>requestId</code>
+        para correlação com os logs do servidor.
+      </p>
+      <pre>
+{
+  "type": "https://api.diospeechai/errors/bad-request",
+  "title": "Bad request",
+  "status": 400,
+  "detail": "Tipo de arquivo inválido: 'application/pdf'.",
+  "timestamp": "2026-04-11T12:00:00Z",
+  "requestId": "a3f2c1d0-7f3e-4b2a-9c1d-e8f5a6b7c8d9"
+}
+
+# O requestId está também no header de resposta:
+# X-Request-Id: a3f2c1d0-7f3e-4b2a-9c1d-e8f5a6b7c8d9</pre>
+    </section>
+
+    <footer><p>Desenvolvido por Eric Hiroshi</p></footer>
+  </div>
+</body>
+</html>

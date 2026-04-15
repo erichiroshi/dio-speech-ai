@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.diospeechai.transcription.documentation.TranscriptionControllerDocumentation;
 import com.example.diospeechai.transcription.dto.TranscriptionResponse;
 import com.example.diospeechai.transcription.service.TranscriptionService;
 
@@ -15,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/transcriptions")
 @RequiredArgsConstructor
-public class TranscriptionController {
+public class TranscriptionController implements TranscriptionControllerDocumentation {
 
 	private final TranscriptionService service;
 

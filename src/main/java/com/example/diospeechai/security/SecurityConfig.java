@@ -16,13 +16,18 @@ import lombok.RequiredArgsConstructor;
 /**
  * Configuração de segurança stateless com JWT.
  *
+ * <p>v4.1.0: rotas do SpringDoc/Swagger UI adicionadas aos endpoints públicos.
+ *
  * <p>Política de acesso:
  * <ul>
- *   <li>{@code GET  /actuator/health}     — público (healthcheck do Docker)</li>
- *   <li>{@code GET  /actuator/prometheus} — público (scraping do Prometheus)</li>
- *   <li>{@code POST /auth/token}          — público (obter token)</li>
- *   <li>{@code POST /api/transcriptions}  — requer {@code ROLE_USER}</li>
- *   <li>Qualquer outra rota              — requer autenticação</li>
+ *   <li>{@code GET  /actuator/health}        — público (healthcheck Docker)</li>
+ *   <li>{@code GET  /actuator/prometheus}    — público (scraping Prometheus)</li>
+ *   <li>{@code POST /auth/token}             — público (obter token)</li>
+ *   <li>{@code GET  /v3/api-docs/**}         — público (spec OpenAPI JSON)</li>
+ *   <li>{@code GET  /swagger-ui/**}          — público (Swagger UI)</li>
+ *   <li>{@code GET  /swagger-ui.html}        — público (redirect para UI)</li>
+ *   <li>{@code POST /api/transcriptions}     — requer {@code ROLE_USER}</li>
+ *   <li>Qualquer outra rota                  — requer autenticação</li>
  * </ul>
  */
 @Configuration
@@ -43,14 +48,21 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
+                        // ── Actuator público ──────────────────────────────────
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/info").permitAll()
+
+                        // ── Auth público ──────────────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/auth/token").permitAll()
-                        // API de transcrição — requer ROLE_USER
+                        
+                        // ── Swagger / OpenAPI público (v4.1.0) ────────────────
+                        .requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+                        
+                        // ── API protegida ─────────────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/api/transcriptions").hasRole("USER")
-                        // Tod-o o restante requer autenticação
                         .anyRequest().authenticated()
                 )
 

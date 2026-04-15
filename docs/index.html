@@ -34,6 +34,7 @@
       <a href="architecture.html">Arquitetura</a>
       <a href="observability.html">Observabilidade</a>
       <a href="resilience.html">Resiliência</a>
+      <a href="swagger.html">API Reference</a>
       <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
     </nav>
 
@@ -41,9 +42,9 @@
       <h2>🚀 Sobre o projeto</h2>
       <p>
         O <strong>dio-speech-ai</strong> é uma API REST para transcrição de áudio com <strong>Whisper</strong>
-        via Speaches, desenvolvida em três fases evolutivas para o desafio <strong>DIO × Globant</strong>.
+        via Speaches, desenvolvida em quatro fases evolutivas para o desafio <strong>DIO × Globant</strong>.
         Demonstra boas práticas de arquitetura Java moderna: observabilidade completa, cache inteligente,
-        resiliência a falhas e autenticação stateless.
+        resiliência a falhas, autenticação stateless e documentação automática via OpenAPI.
       </p>
     </section>
 
@@ -67,6 +68,12 @@
         <span class="badge done">✓</span>
         <span class="phase-ver">v3.1–v3.5</span>
       </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 4</span>
+        <span class="phase-desc">Documentação — OpenAPI 3.1 · Swagger UI · SpringDoc</span>
+        <span class="badge done">✓</span>
+        <span class="phase-ver">v4.1.0</span>
+      </div>
       <div class="actions" style="margin-top: 16px;">
         <a class="btn btn-primary" href="roadmap_dio_speech_ai.html">Ver roadmap detalhado</a>
       </div>
@@ -84,6 +91,19 @@
       <p style="margin-top: 14px;"><strong style="color:var(--primary)">Modo prod</strong> — stack completa containerizada</p>
       <div class="actions" style="margin-top:8px;">
         <code>./gradlew clean build && docker compose up -d</code>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📄 Documentação interativa</h2>
+      <p>Com a aplicação em execução, acesse o Swagger UI:</p>
+      <div class="actions" style="margin-top:10px;">
+        <a href="http://localhost:8080/swagger-ui.html" style="color:var(--primary); font-family:'Courier New',monospace; font-size:13px;">
+          http://localhost:8080/swagger-ui.html
+        </a>
+      </div>
+      <div class="actions" style="margin-top: 8px;">
+        <a class="btn btn-primary" href="swagger.html">Ver API Reference</a>
       </div>
     </section>
 
@@ -115,6 +135,7 @@
         <div class="stack-item"><div class="name">Retry <span class="badge done">v3.2</span></div><div class="desc">Backoff 500ms→2s</div></div>
         <div class="stack-item"><div class="name">JWT <span class="badge done">v3.4</span></div><div class="desc">Spring Security stateless</div></div>
         <div class="stack-item"><div class="name">Testcontainers <span class="badge done">v3.5</span></div><div class="desc">6 cenários de integração</div></div>
+        <div class="stack-item"><div class="name">SpringDoc OpenAPI <span class="badge done">v4.1</span></div><div class="desc">Swagger UI + OAS 3.1</div></div>
       </div>
     </section>
 

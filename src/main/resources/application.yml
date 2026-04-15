@@ -122,3 +122,20 @@ logging:
   level:
     root: INFO
     '[com.example.diospeechai]': INFO
+
+# ── Documentação v4.1.0 ─────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs          # endpoint da spec OpenAPI JSON
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html      # Swagger UI interativo
+    tags-sorter: alpha           # ordena as tags alfabeticamente
+    operations-sorter: alpha     # ordena as operações alfabeticamente
+    display-request-duration: true
+    try-it-out-enabled: true     # habilita "Try it out" por padrão
+    persist-authorization: true   # token sobrevive ao F5
+  # Inclui apenas os endpoints da aplicação, não do Actuator
+  packages-to-scan: com.example.diospeechai
+  paths-to-exclude: /actuator/**

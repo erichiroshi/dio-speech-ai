@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.diospeechai.security.documentation.AuthControllerDocumentation;
+import com.example.diospeechai.security.dto.TokenRequest;
+import com.example.diospeechai.security.dto.TokenResponse;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,12 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthControllerDocumentation {
 
     private final JwtService jwtService;
-
-    record TokenRequest(String username, String password) {}
-    record TokenResponse(String token) {}
 
     @PostMapping("/token")
     public ResponseEntity<TokenResponse> token(@RequestBody TokenRequest request) {

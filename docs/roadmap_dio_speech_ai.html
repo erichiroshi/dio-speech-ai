@@ -81,6 +81,7 @@
       <a href="architecture.html">Arquitetura</a>
       <a href="observability.html">Observabilidade</a>
       <a href="resilience.html">Resiliência</a>
+      <a href="swagger.html">API Reference</a>
       <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
     </nav>
 
@@ -234,6 +235,23 @@ const phases = [
         version: "v3.5.0",
         detail: "Testcontainers para Redis e Zipkin. Cenários: cache hit retorna cached=true; CB abre após N falhas → 503; retry reconecta na 2ª tentativa; JWT ausente → 401; JWT expirado → 401; JWT válido → 200.",
         snippet: "@Container\nstatic RedisContainer redis = new RedisContainer(\"redis:7-alpine\");\n\n@Test void shouldReturnCachedTranscription() {\n  // 1ª chamada: miss → chama Whisper\n  // 2ª chamada: hit → Redis, cached=true\n}"
+      }
+    ]
+  }
+
+  ,{
+    id: 4, label: "Fase 4", title: "Documentação (OpenAPI + Swagger UI)",
+    color: "#0F6E56", badgeBg: "#0c2a1a", badgeColor: "#22c55e",
+    version: "v4.1.0", taskCount: 1, done: true,
+    tasks: [
+      {
+        title: "4.1 — SpringDoc OpenAPI + Swagger UI",
+        desc: "Spec OpenAPI 3.1 automática + Swagger UI interativo com autenticação JWT",
+        tags: ["SpringDoc", "OpenAPI", "Swagger UI"],
+        done: true,
+        version: "v4.1.0",
+        detail: "springdoc-openapi-starter-webmvc-ui:2.8.9. OpenApiConfig define metadados, servidores e esquema JWT Bearer global. SecurityConfig libera /v3/api-docs/** e /swagger-ui/**. TranscriptionController e AuthController anotados com @Tag, @Operation, @ApiResponses com exemplos reais. TranscriptionResponse anotado com @Schema. Endpoint público /auth/token marcado com @SecurityRequirements vazio.",
+        snippet: "// build.gradle\nimplementation \"org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9\"\n\n// application.yml\nspringdoc:\n  swagger-ui:\n    path: /swagger-ui.html\n    try-it-out-enabled: true\n  packages-to-scan: com.example.diospeechai\n  paths-to-exclude: /actuator/**\n\n// Swagger UI: http://localhost:8080/swagger-ui.html\n// Spec JSON: http://localhost:8080/v3/api-docs"
       }
     ]
   }

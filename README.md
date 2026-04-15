@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis">
   <img src="https://img.shields.io/badge/Resilience4j-informational?style=flat-square" alt="Resilience4j">
   <img src="https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="JWT">
+  <img src="https://img.shields.io/badge/OpenAPI-3.1-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI 3.1">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="MIT License">
 </p>
 
@@ -27,7 +28,7 @@
 
 Solução desenvolvida para o desafio **DIO × Globant — Java & Spring Boot AI Developer**.
 
-API REST para transcrição de áudio com **Whisper** via [Speaches](https://github.com/speaches-ai/speaches), construída em três fases evolutivas: API base → observabilidade + cache → resiliência + segurança.
+API REST para transcrição de áudio com **Whisper** via [Speaches](https://github.com/speaches-ai/speaches), construída em quatro fases evolutivas: API base → observabilidade + cache → resiliência + segurança → documentação.
 
 ---
 
@@ -39,6 +40,7 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 - [🏗️ Arquitetura](#️-arquitetura)
 - [⚙️ Pré-requisitos](#️-pré-requisitos)
 - [🚀 Quick Start](#-quick-start)
+- [📄 Swagger UI](#-swagger-ui)
 - [📡 Endpoint de transcrição](#-endpoint-de-transcrição)
 - [🔐 Autenticação JWT](#-autenticação-jwt)
 - [📊 Observabilidade](#-observabilidade)
@@ -52,20 +54,29 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 
 ## 🗺️ Roadmap
 
-**[Ver Roadmap completo — Fases 1, 2 e 3](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
-
+**[Ver Roadmap completo — Fases 1, 2, 3 e 4](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
+ 
 | Fase | Versões | Status |
 |---|---|---|
 | Fase 1 — API base | v1.0.0 | ✅ Concluída |
 | Fase 2 — Observabilidade + Cache | v2.1.0 → v2.7.0 | ✅ Concluída |
 | Fase 3 — Resiliência + Segurança | v3.1.0 → v3.5.0 | ✅ Concluída |
-
+| Fase 4 — Documentação | v4.1.0 | ✅ Concluída |
+ 
 ---
 
 ## 🌐 Documentação
 
 👉 https://erichiroshi.github.io/dio-speech-ai/
-
+ 
+| Página | Descrição |
+|---|---|
+| [Home](https://erichiroshi.github.io/dio-speech-ai/) | Visão geral e quick start |
+| [Arquitetura](https://erichiroshi.github.io/dio-speech-ai/architecture.html) | C4 Model — Contexto, Containers, Componentes |
+| [Observabilidade](https://erichiroshi.github.io/dio-speech-ai/observability.html) | Métricas, Logs JSON, Tracing |
+| [Resiliência](https://erichiroshi.github.io/dio-speech-ai/resilience.html) | CircuitBreaker, Retry, estados e configuração |
+| [API Reference](https://erichiroshi.github.io/dio-speech-ai/swagger.html) | Endpoints, formatos, exemplos de request/response |
+ 
 ---
 
 ## 🛠️ Stack
@@ -85,8 +96,9 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Zipkin + OpenTelemetry | — | Tracing distribuído |
 | Redis | 8-alpine | Cache de transcrições por SHA-256 |
 | Resilience4j | 2.4.0 | CircuitBreaker + Retry com backoff |
-| Spring Security + Nimbus JWT | 9.37.3 | Autenticação stateless HS256 |
-| Testcontainers | 1.19.8 | Testes de integração com Redis real |
+| Spring Security + Nimbus JWT | 10.9 | Autenticação stateless HS256 |
+| Testcontainers | 2.0.4 | Testes de integração com Redis real |
+| SpringDoc OpenAPI | 3.0.3 | Spec OAS 3.1 + Swagger UI |
 
 ---
 
@@ -162,6 +174,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 Serviços disponíveis:
 - API: http://localhost:8080
+- **Swagger UI: http://localhost:8080/swagger-ui.html**
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (admin/admin)
 - Zipkin: http://localhost:9411
@@ -195,6 +208,33 @@ docker compose down                             # prod
 docker compose down -v                          # remove volumes (apaga modelo)
 ```
 
+---
+
+## 📄 Swagger UI
+ 
+Com a aplicação em execução, acesse a documentação interativa:
+ 
+```
+http://localhost:8080/swagger-ui.html
+```
+ 
+### Como autenticar no Swagger UI
+ 
+1. Expanda **Autenticação → POST /auth/token**
+2. Clique em **Try it out**, insira `{"username":"user","password":"any"}` e execute
+3. Copie o valor do campo `token` na resposta
+4. Clique em **Authorize 🔒** (botão no topo direito)
+5. Cole o token no campo `bearerAuth` e confirme
+6. Todas as requisições seguintes incluem o header automaticamente
+
+### Endpoints da documentação
+ 
+| URL | Descrição |
+|---|---|
+| `/swagger-ui.html` | Swagger UI interativo |
+| `/v3/api-docs` | Spec OpenAPI 3.1 (JSON) |
+| `/v3/api-docs.yaml` | Spec OpenAPI 3.1 (YAML) |
+ 
 ---
 
 ## 📡 Endpoint de transcrição
@@ -258,6 +298,8 @@ curl -s -X POST http://localhost:8080/api/transcriptions \
 |---|---|
 | `GET /actuator/health` | Healthcheck Docker |
 | `GET /actuator/prometheus` | Scraping Prometheus |
+| `GET /swagger-ui.html` | Documentação interativa |
+| `GET /v3/api-docs/**` | Spec OpenAPI |
 | `POST /auth/token` | Obter token JWT |
 
 ### Variáveis JWT
@@ -332,6 +374,9 @@ curl -s -X POST http://localhost:8080/api/transcriptions \
 
 # Executar testes de integração
 ./gradlew test
+
+# Inspecionar chaves no Redis
+docker exec -it redis redis-cli keys 'transcription:*'
 ```
 
 ---
@@ -363,7 +408,13 @@ dio-speech-ai/
 │   │   │   │   ├── WebClientConfig.java
 │   │   │   │   ├── RedisConfig.java            ← v2.3.0
 │   │   │   │   └── MdcLoggingFilter.java       ← v2.2.0
+│   │   │   │   └── OpenApiConfig.java          ← v4.1.0
 │   │   │   ├── security/                       ← v3.4.0
+│   │   │   │   ├── documentation/
+|   │   │   │   │   └── AuthControllerDocumentation.java  ← v4.1.0
+│   │   │   │   ├── dto/
+|   │   │   │   │   ├── TokenRequest.java   ← v4.1.0
+|   │   │   │   │   └── TokenResponse.java  ← v4.1.0
 │   │   │   │   ├── JwtProperties.java
 │   │   │   │   ├── JwtService.java
 │   │   │   │   ├── JwtValidationException.java
@@ -371,6 +422,8 @@ dio-speech-ai/
 │   │   │   │   ├── SecurityConfig.java
 │   │   │   │   └── AuthController.java
 │   │   │   └── transcription/
+│   │   │       ├── documentation/
+|   │   │       │   └── TranscriptionControllerDocumentation.java  ← v4.1.0
 │   │   │       ├── cache/
 │   │   │       │   └── CacheService.java       ← v2.4.0
 │   │   │       ├── controller/
@@ -389,16 +442,22 @@ dio-speech-ai/
 │   │   │           └── TranscriptionService.java
 │   │   └── resources/
 │   │       ├── application.yml
+│   │       ├── application-dev.yml
 │   │       └── logback-spring.xml              ← v2.2.0
 │   └── test/
 │       └── java/com/example/diospeechai/
 │           └── transcription/
 │               └── TranscriptionIntegrationTest.java  ← v3.5.0
-├── docs/
+├── about/                                           ← docs de cada fase
+│   ├── projeto.md
+│   ├── v2.1.0.md … v3.5.0.md
+│   └── v4.1.0.md
+├── docs/                                            ← GitHub Pages
 │   ├── index.html
 │   ├── architecture.html
 │   ├── observability.html
 │   ├── resilience.html
+│   ├── swagger.html                                 ← v4.1.0
 │   ├── roadmap_dio_speech_ai.html
 │   └── styles.css
 ├── monitoring/
@@ -411,12 +470,15 @@ dio-speech-ai/
 │       │   └── dashboards/dashboards.yml
 │       └── dashboards/
 │           └── dio-speech-ai.json
+│           └── transcription_cache_total.json
 ├── docker/Dockerfile
 ├── docker-compose.yml              ← prod (6 serviços)
 ├── docker-compose.dev.yml          ← dev  (5 serviços)
 ├── audio.wav
 ├── build.gradle
-└── VERSIONING.md
+├── VERSIONING.md
+└── release.sh
+
 ```
 
 ---
@@ -442,6 +504,16 @@ curl -s -X POST http://localhost:8080/auth/token \
   -H 'Content-Type: application/json' \
   -d '{"username":"user","password":"any"}' | jq .token
 ```
+ 
+**Swagger UI retorna 401**
+ 
+Verifique se as rotas estão liberadas no `SecurityConfig`:
+```java
+.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
+.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+.requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+**Prometheus não coleta métricas (modo dev)**
+```
 
 **Prometheus não coleta métricas (modo dev)**
 
@@ -460,6 +532,7 @@ uvx speaches-cli model download Systran/faster-whisper-small
 **Eric Hiroshi** — Backend Engineer · Java / Spring Boot
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Eric%20Hiroshi-blue)](https://www.linkedin.com/in/eric-hiroshi/)
+
 [![GitHub](https://img.shields.io/badge/GitHub-erichiroshi-black)](https://github.com/erichiroshi)
 
 ---
