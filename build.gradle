@@ -78,7 +78,7 @@ dependencies {
 
 	// ── Testes v3.5.0 ───────────────────────────────────────────────────────
 	// BOM do Testcontainers — gerencia todas as versões dos módulos
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.19.8')
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.4')
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	// Módulo Redis para Testcontainers
