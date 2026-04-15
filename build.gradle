@@ -82,7 +82,7 @@ dependencies {
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	// Módulo Redis para Testcontainers
-	testImplementation 'com.redis:testcontainers-redis:2.2.2'
+	testImplementation 'com.redis:testcontainers-redis:2.2.4'
 	// MockWebServer para simular o Speaches (Whisper) nos testes
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
