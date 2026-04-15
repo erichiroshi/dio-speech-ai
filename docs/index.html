@@ -10,14 +10,13 @@
     .stack-item { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
     .stack-item .name { font-size: 13px; font-weight: 600; color: var(--text); }
     .stack-item .desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
-    .badge-done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
-    .badge-wip  { background: #0a1929; color: #60a5fa; border: 1px solid #1e40af; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 5px; }
+    .done   { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
     .phase-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .phase-row:last-child { border-bottom: none; }
-    .phase-num { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 52px; }
+    .phase-num { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 56px; }
     .phase-desc { font-size: 13px; color: var(--text); flex: 1; }
-    .phase-version { font-size: 11px; color: #22c55e; font-family: 'Courier New', monospace; }
+    .phase-ver { font-size: 11px; color: #60a5fa; font-family: 'Courier New', monospace; }
   </style>
 </head>
 <body>
@@ -41,34 +40,32 @@
     <section class="card">
       <h2>🚀 Sobre o projeto</h2>
       <p>
-        O <strong>dio-speech-ai</strong> é uma API desenvolvida com Spring Boot para transcrição de áudio
-        utilizando o modelo <strong>Whisper</strong> via Speaches. O projeto evolui em fases com foco em
-        boas práticas de arquitetura: observabilidade, cache, resiliência e segurança.
-      </p>
-      <p style="margin-top: 10px;">
-        Desenvolvido para o desafio <strong>DIO × Globant — Java &amp; Spring Boot AI Developer</strong>.
+        O <strong>dio-speech-ai</strong> é uma API REST para transcrição de áudio com <strong>Whisper</strong>
+        via Speaches, desenvolvida em três fases evolutivas para o desafio <strong>DIO × Globant</strong>.
+        Demonstra boas práticas de arquitetura Java moderna: observabilidade completa, cache inteligente,
+        resiliência a falhas e autenticação stateless.
       </p>
     </section>
 
     <section class="card">
-      <h2>📈 Progresso do roadmap</h2>
+      <h2>✅ Roadmap — todas as fases concluídas</h2>
       <div class="phase-row">
         <span class="phase-num">Fase 1</span>
-        <span class="phase-desc">API base — transcrição síncrona, Docker Compose, ProblemDetail</span>
-        <span class="badge badge-done">✓ concluída</span>
-        <span class="phase-version">v1.0.0</span>
+        <span class="phase-desc">API base — transcrição síncrona, Docker Compose, ProblemDetail (RFC 9457)</span>
+        <span class="badge done">✓</span>
+        <span class="phase-ver">v1.0.0</span>
       </div>
       <div class="phase-row">
         <span class="phase-num">Fase 2</span>
         <span class="phase-desc">Observabilidade + Cache — Prometheus · Logs JSON · Redis · Grafana · Zipkin</span>
-        <span class="badge badge-done">✓ concluída</span>
-        <span class="phase-version">v2.7.0</span>
+        <span class="badge done">✓</span>
+        <span class="phase-ver">v2.1–v2.7</span>
       </div>
       <div class="phase-row">
         <span class="phase-num">Fase 3</span>
-        <span class="phase-desc">Resiliência + Segurança — CircuitBreaker · Retry · JWT</span>
-        <span class="badge badge-done">✓ concluída</span>
-        <span class="phase-version">v3.4.0</span>
+        <span class="phase-desc">Resiliência + Segurança — CircuitBreaker · Retry · JWT · Testes Integração</span>
+        <span class="badge done">✓</span>
+        <span class="phase-ver">v3.1–v3.5</span>
       </div>
       <div class="actions" style="margin-top: 16px;">
         <a class="btn btn-primary" href="roadmap_dio_speech_ai.html">Ver roadmap detalhado</a>
@@ -76,41 +73,56 @@
     </section>
 
     <section class="card">
-      <h2>⚙️ Como executar</h2>
-      <p>Dois modos de execução disponíveis:</p>
-      <p style="margin-top: 10px;"><strong style="color:var(--primary)">Desenvolvimento</strong> — infraestrutura no Docker, app local</p>
-      <div class="actions">
+      <h2>⚙️ Quick Start</h2>
+      <p><strong style="color:var(--primary)">Modo dev</strong> — infraestrutura no Docker, app local</p>
+      <div class="actions" style="margin-top:8px;">
         <code>docker compose -f docker-compose.dev.yml up -d</code>
       </div>
-      <div class="actions" style="margin-top: 8px;">
+      <div class="actions" style="margin-top: 6px;">
         <code>./gradlew bootRun --args='--spring.profiles.active=dev'</code>
       </div>
-      <p style="margin-top: 14px;"><strong style="color:var(--primary)">Produção (simulada)</strong> — stack completa containerizada</p>
-      <div class="actions">
-        <code>docker compose up -d</code>
+      <p style="margin-top: 14px;"><strong style="color:var(--primary)">Modo prod</strong> — stack completa containerizada</p>
+      <div class="actions" style="margin-top:8px;">
+        <code>./gradlew clean build && docker compose up -d</code>
       </div>
     </section>
 
     <section class="card">
-      <h2>🧠 Stack atual</h2>
+      <h2>🔐 Autenticação</h2>
+      <p>Obter token JWT e usar na transcrição:</p>
+      <div class="actions" style="margin-top:10px;">
+        <code>curl -s -X POST http://localhost:8080/auth/token \<br>
+&nbsp;&nbsp;-H 'Content-Type: application/json' \<br>
+&nbsp;&nbsp;-d '{"username":"user","password":"any"}' | jq -r .token</code>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🧠 Stack completa</h2>
       <div class="stack-grid">
         <div class="stack-item"><div class="name">Java 25</div><div class="desc">Linguagem principal</div></div>
         <div class="stack-item"><div class="name">Spring Boot 4.x</div><div class="desc">Framework web</div></div>
         <div class="stack-item"><div class="name">Lombok</div><div class="desc">@RequiredArgsConstructor</div></div>
         <div class="stack-item"><div class="name">Speaches (Whisper)</div><div class="desc">Motor de transcrição</div></div>
-        <div class="stack-item"><div class="name">Docker Compose</div><div class="desc">Orquestração (dev + prod)</div></div>
-        <div class="stack-item"><div class="name">Micrometer + Prometheus <span class="badge badge-done">v2.1</span></div><div class="desc">Métricas e scraping</div></div>
-        <div class="stack-item"><div class="name">Redis <span class="badge badge-done">v2.3+</span></div><div class="desc">Cache SHA-256</div></div>
-        <div class="stack-item"><div class="name">Grafana <span class="badge badge-done">v2.6</span></div><div class="desc">Dashboards</div></div>
-        <div class="stack-item"><div class="name">Zipkin / OTel <span class="badge badge-done">v2.7</span></div><div class="desc">Tracing</div></div>
-        <div class="stack-item"><div class="name">Resilience4j <span class="badge badge-done">v3.2+</span></div><div class="desc">CircuitBreaker + Retry</div></div>
-        <div class="stack-item"><div class="name">Spring Security + JWT <span class="badge badge-done">v3.4</span></div><div class="desc">Autenticação</div></div>
-        <div class="stack-item"><div class="name">Testes de Integração<span class="badge badge-done">v3.5</span></div><div class="desc">Testcontainers + SpringBootTest</div></div>
+        <div class="stack-item"><div class="name">Docker Compose</div><div class="desc">Dev (5 serv.) + Prod (6 serv.)</div></div>
+        <div class="stack-item"><div class="name">Prometheus <span class="badge done">v2.1</span></div><div class="desc">Métricas e scraping</div></div>
+        <div class="stack-item"><div class="name">Logs JSON <span class="badge done">v2.2</span></div><div class="desc">Logback + MDC + requestId</div></div>
+        <div class="stack-item"><div class="name">Redis <span class="badge done">v2.3</span></div><div class="desc">Cache SHA-256, TTL 24h</div></div>
+        <div class="stack-item"><div class="name">Cache <span class="badge done">v2.4</span></div><div class="desc">cached=true na resposta</div></div>
+        <div class="stack-item"><div class="name">Grafana <span class="badge done">v2.6</span></div><div class="desc">9 painéis provisionados</div></div>
+        <div class="stack-item"><div class="name">Zipkin/OTel <span class="badge done">v2.7</span></div><div class="desc">Tracing distribuído</div></div>
+        <div class="stack-item"><div class="name">CircuitBreaker <span class="badge done">v3.1</span></div><div class="desc">Resilience4j, fallback 503</div></div>
+        <div class="stack-item"><div class="name">Retry <span class="badge done">v3.2</span></div><div class="desc">Backoff 500ms→2s</div></div>
+        <div class="stack-item"><div class="name">JWT <span class="badge done">v3.4</span></div><div class="desc">Spring Security stateless</div></div>
+        <div class="stack-item"><div class="name">Testcontainers <span class="badge done">v3.5</span></div><div class="desc">6 cenários de integração</div></div>
       </div>
     </section>
 
     <footer>
-      <p>Desenvolvido por <strong>Eric Hiroshi</strong> · <a href="https://www.linkedin.com/in/eric-hiroshi/" style="color:var(--primary)">LinkedIn</a> · <a href="https://github.com/erichiroshi" style="color:var(--primary)">GitHub</a></p>
+      <p>Desenvolvido por <strong>Eric Hiroshi</strong> ·
+        <a href="https://www.linkedin.com/in/eric-hiroshi/" style="color:var(--primary)">LinkedIn</a> ·
+        <a href="https://github.com/erichiroshi" style="color:var(--primary)">GitHub</a>
+      </p>
     </footer>
   </div>
 </body>

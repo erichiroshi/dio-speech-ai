@@ -14,13 +14,13 @@
     td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
     td:first-child { color: var(--text); font-weight: 500; }
     .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px; }
-    .planned { background: #1a1a2e; color: #818cf8; border: 1px solid #3730a3; }
+    .done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
     .state-closed { color: #22c55e; font-weight: 600; }
     .state-open   { color: #f87171; font-weight: 600; }
     .state-half   { color: #fbbf24; font-weight: 600; }
     .timeline-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
     .timeline-item:last-child { border-bottom: none; }
-    .timeline-version { font-size: 11px; font-family: 'Courier New', monospace; color: #60a5fa; min-width: 54px; padding-top: 2px; }
+    .timeline-version { font-size: 11px; font-family: 'Courier New', monospace; color: #22c55e; min-width: 58px; padding-top: 2px; }
     .timeline-body { flex: 1; }
     .timeline-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
     .timeline-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -37,16 +37,13 @@
     </nav>
 
     <h1 style="margin: 24px 0 4px;">Resiliência</h1>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:8px;">
-      Estratégia planejada para a <strong style="color:#818cf8">Fase 3</strong> — a ser implementada após a Fase 2 (Observabilidade + Cache).
-    </p>
-    <p style="color:var(--muted); font-size:12px; margin-bottom: 24px;">
-      Status atual: <span style="color:#fbbf24">⏳ não implementado</span> — o sistema não possui tolerância a falhas além do timeout de 30s no WebClient.
+    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">
+      Fase 3 concluída — CircuitBreaker + Retry implementados em <strong style="color:#22c55e">v3.1.0</strong> e <strong style="color:#22c55e">v3.2.0</strong>.
     </p>
 
     <!-- ── POR QUÊ RESILIÊNCIA ───────────────────────────────────── -->
     <section class="card">
-      <h2>O problema atual</h2>
+      <h2>O problema</h2>
       <p style="color:var(--muted); font-size:13px; margin-bottom: 10px;">
         O <code>SpeechToTextClient</code> faz uma chamada bloqueante ao Whisper com <code>.block(Duration.ofSeconds(30))</code>.
         Se o Speaches estiver lento, sobrecarregado ou offline:
@@ -72,42 +69,44 @@
       </p>
     </section>
 
-    <!-- ── SOLUÇÃO PLANEJADA ─────────────────────────────────────── -->
+    <!-- ── FLUXO IMPLEMENTADO ──────────────────────────────────────── -->
     <section class="card">
-      <h2>Solução planejada — Resilience4j</h2>
+      <h2>Cadeia de resiliência implementada</h2>
       <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
         Padrões aplicados em camadas sobre o <code>SpeechToTextClient</code>, na ordem de execução:
-      </p>
+      </p>      
       <pre>
-  Requisição
-       │
-       ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Retry  (v3.2.0)                                            │
-  │  maxAttempts=3 · backoff 500ms → 1s → 2s (exponencial)      │
-  │  retry apenas em TranscriptionException (I/O)               │
-  │  não faz retry em IllegalArgumentException (validação)      │
-  └───────────────────────────┬─────────────────────────────────┘
-                              │ (se ainda falhar após 3 tentativas)
-                              ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Circuit Breaker  (v3.1.0)                        estado:   │
-  │                                                             │
-  │  CLOSED ──(≥50% falhas em 10 calls)──► OPEN                 │
-  │    ↑                                      │                 │
-  │    └──(3 calls ok em HALF_OPEN)──◄── (30s espera)           │
-  │                                      HALF_OPEN              │
-  └───────────────────────────┬─────────────────────────────────┘
-                              │ (se OPEN → vai direto pro fallback)
-                              ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Fallback                                                   │
-  │  TranscriptionException("Whisper indisponível")             │
-  │  → GlobalExceptionHandler → HTTP 503 ProblemDetail          │
-  └─────────────────────────────────────────────────────────────┘</pre>
+  Requisição → TranscriptionService → SpeechToTextClient
+                                             │
+                        ┌────────────────────┘
+                        │
+                        ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  @Retry(name="whisper")  ←── v3.2.0                              │
+  │  maxAttempts=3 · backoff 500ms → 1s → 2s (exponencial, max 4s)   │
+  │  retry apenas em TranscriptionException (erros de I/O)           │
+  │  ignora ServiceUnavailableException + IllegalArgumentException   │
+  └───────────────────────────────┬──────────────────────────────────┘
+                                  │ (se ainda falhar após 3 tentativas)
+                                  ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  @CircuitBreaker(name="whisper")  ←── v3.1.0                     │
+  │                                                                  │
+  │  CLOSED ──(≥50% falhas em 10 calls)──► OPEN                      │
+  │    ↑                                      │                      │
+  │    └──(3 calls ok em HALF_OPEN)──◄── (30s)                       │
+  │                                      HALF_OPEN                   │
+  └───────────────────────────────┬──────────────────────────────────┘
+                                  │ (se OPEN → fallback imediato)
+                                  ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Fallback                                                        │
+  │  ServiceUnavailableException                                     │
+  │  → GlobalExceptionHandler → HTTP 503 ProblemDetail               │
+  └──────────────────────────────────────────────────────────────────┘</pre>
     </section>
 
-    <!-- ── ESTADOS DO CIRCUIT BREAKER ───────────────────────────── -->
+    <!-- ── ESTADOS DO CB ──────────────────────────────────────────── -->
     <section class="card">
       <h2>Estados do Circuit Breaker</h2>
       <table>
@@ -115,138 +114,135 @@
         <tbody>
           <tr>
             <td><span class="state-closed">CLOSED</span></td>
-            <td>Operação normal — todas as chamadas passam para o Speaches</td>
-            <td>→ OPEN se ≥ 50% das últimas 10 chamadas falharem</td>
+            <td>Operação normal — chamadas passam para o Speaches</td>
+            <td>→ OPEN se ≥ 50% das últimas 10 chamadas falharem (mín. 5)</td>
           </tr>
           <tr>
             <td><span class="state-open">OPEN</span></td>
-            <td>Circuito aberto — chamadas bloqueadas imediatamente, fallback executado</td>
-            <td>→ HALF_OPEN após 30 segundos de espera</td>
+            <td>Circuito aberto — fallback imediato, sem chamar Speaches</td>
+            <td>→ HALF_OPEN após 30s (prod) / 10s (dev)</td>
           </tr>
           <tr>
             <td><span class="state-half">HALF_OPEN</span></td>
             <td>Sondagem — 3 chamadas de teste permitidas</td>
-            <td>→ CLOSED se as 3 tiverem sucesso; → OPEN se qualquer uma falhar</td>
+            <td>→ CLOSED se as 3 passarem; → OPEN se qualquer uma falhar</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- ── CONFIGURAÇÃO PLANEJADA ────────────────────────────────── -->
+    <!-- ── CONFIGURAÇÃO REAL ──────────────────────────────────────── -->
     <section class="card">
-      <h2>Configuração planejada</h2>
+      <h2>Configuração implementada</h2>
       <h3>application.yml</h3>
       <pre>
 resilience4j:
   circuitbreaker:
     instances:
       whisper:
-        slidingWindowSize: 10
+        slidingWindowSize: 10             # prod | 5 em dev
         failureRateThreshold: 50          # % de falhas para abrir
-        waitDurationInOpenState: 30s
+        waitDurationInOpenState: 30s      # prod | 10s em dev
         permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true     # expõe no /actuator/health
+        minimumNumberOfCalls: 5           # prod | 3 em dev
+        registerHealthIndicator: true     # visível em /actuator/health
+        slowCallDurationThreshold: 10s    # chamadas lentas = falha
+        slowCallRateThreshold: 80
 
   retry:
     instances:
       whisper:
-        maxAttempts: 3
+        maxAttempts: 3                    # prod | 2 em dev
         waitDuration: 500ms
         enableExponentialBackoff: true
         exponentialBackoffMultiplier: 2   # 500ms → 1s → 2s
+        exponentialMaxWaitDuration: 4s
         retryExceptions:
-          - com.example.diospeechai.transcription.exception.TranscriptionException</pre>
+          - TranscriptionException
+        ignoreExceptions:
+          - ServiceUnavailableException
+          - IllegalArgumentException</pre>
 
       <h3>SpeechToTextClient.java</h3>
       <pre>
-// Ordem das anotações importa:
-// Retry executa primeiro → tenta N vezes → depois CircuitBreaker decide
-@Retry(name = "whisper")
+// Ordem importa: Retry executa primeiro, CircuitBreaker por baixo
+@Retry(name = "whisper", fallbackMethod = "fallback")
 @CircuitBreaker(name = "whisper", fallbackMethod = "fallback")
-public WhisperResponse transcribe(MultipartFile file) {
-    // ... WebClient call ...
-}
+public WhisperResponse transcribe(MultipartFile file) { ... }
 
 private WhisperResponse fallback(MultipartFile file, Exception ex) {
-    throw new TranscriptionException(
-        "Whisper indisponível — tente novamente em instantes", ex
-    );
+    throw new ServiceUnavailableException(
+        "Serviço de transcrição temporariamente indisponível.");
 }</pre>
     </section>
 
-    <!-- ── MÉTRICAS DE RESILIÊNCIA ───────────────────────────────── -->
+    <!-- ── MÉTRICAS ───────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Métricas de resiliência <span class="badge planned">⏳ v3.3.0</span></h2>
-      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
-        Resilience4j integra automaticamente com Micrometer. As métricas aparecerão no Prometheus sem código adicional.
+      <h2>Métricas de resiliência no Grafana <span class="badge done">v3.3.0</span></h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:10px;">
+        Resilience4j integra com Micrometer automaticamente. Dashboard Grafana atualizado em v3.3.0 com a seção <strong>Resiliência</strong>.
       </p>
       <table>
-        <thead><tr><th>Métrica</th><th>Descrição</th></tr></thead>
+        <thead><tr><th>Painel</th><th>Métrica Prometheus</th></tr></thead>
         <tbody>
-          <tr>
-            <td>resilience4j_circuitbreaker_state</td>
-            <td>Estado atual: 0=CLOSED · 1=OPEN · 2=HALF_OPEN</td>
-          </tr>
-          <tr>
-            <td>resilience4j_circuitbreaker_calls_total</td>
-            <td>Chamadas por tipo: successful, failed, not_permitted (OPEN), slow</td>
-          </tr>
-          <tr>
-            <td>resilience4j_retry_calls_total</td>
-            <td>Tentativas de retry por resultado: successful_with_retry, failed_with_retry</td>
-          </tr>
+          <tr><td>Estado do CB</td><td><code>resilience4j_circuitbreaker_state{name="whisper"}</code></td></tr>
+          <tr><td>Chamadas por tipo</td><td><code>resilience4j_circuitbreaker_calls_seconds_count{kind=...}</code></td></tr>
+          <tr><td>Retries</td><td><code>resilience4j_retry_calls_total{kind=...}</code></td></tr>
         </tbody>
       </table>
-      <h3>Queries Prometheus</h3>
+    </section>
+
+    <!-- ── COMO TESTAR ────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Como testar o comportamento</h2>
       <pre>
-# Estado do circuit breaker (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
-resilience4j_circuitbreaker_state{name="whisper"}
+# 1. Ver estado atual do CB
+curl http://localhost:8080/actuator/health | jq .components.circuitBreakers
 
-# Taxa de chamadas não-permitidas (circuito aberto)
-rate(resilience4j_circuitbreaker_calls_total{
-  name="whisper", kind="not_permitted"}[1m])
+# 2. Forçar abertura do CB (derrubar Speaches e fazer requisições)
+docker stop speaches
 
-# Taxa de chamadas que precisaram de retry
-rate(resilience4j_retry_calls_total{
-  name="whisper", kind="successful_with_retry"}[5m])</pre>
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"user","password":"any"}' | jq -r .token)
+
+# Fazer 5+ requisições — as primeiras retornam 400 (erro Whisper),
+# depois do threshold retornam 503 (circuito aberto)
+for i in {1..6}; do
+  echo -n "Req $i: "
+  curl -s -o /dev/null -w "%{http_code}" \
+    -X POST http://localhost:8080/api/transcriptions \
+    -H "Authorization: Bearer $TOKEN" \
+    -F "file=@audio.wav;type=audio/wav"
+  echo ""
+done
+
+# 3. Restaurar Speaches — CB fecha após waitDurationInOpenState
+docker start speaches</pre>
     </section>
 
     <!-- ── TIMELINE ──────────────────────────────────────────────── -->
     <section class="card">
       <h2>Timeline de implementação</h2>
       <div class="timeline-item">
-        <span class="timeline-version">v3.1.0</span>
+        <span class="timeline-version">v3.1.0 ✓</span>
         <div class="timeline-body">
           <div class="timeline-title">CircuitBreaker</div>
-          <div class="timeline-desc">Dependências Resilience4j + AOP. <code>@CircuitBreaker</code> em SpeechToTextClient com fallback retornando 503.</div>
+          <div class="timeline-desc">Resilience4j + AOP. @CircuitBreaker em SpeechToTextClient. Fallback → ServiceUnavailableException → 503. Estado visível em /actuator/health.</div>
         </div>
       </div>
       <div class="timeline-item">
-        <span class="timeline-version">v3.2.0</span>
+        <span class="timeline-version">v3.2.0 ✓</span>
         <div class="timeline-body">
           <div class="timeline-title">Retry com backoff exponencial</div>
-          <div class="timeline-desc"><code>@Retry</code> wrapping o CircuitBreaker. 3 tentativas com backoff 500ms → 1s → 2s. Retry apenas em erros de I/O.</div>
+          <div class="timeline-desc">@Retry wrapping @CircuitBreaker. 3 tentativas, 500ms→1s→2s. Retry apenas em erros de I/O, ignora erros de validação e CB aberto.</div>
         </div>
       </div>
       <div class="timeline-item">
-        <span class="timeline-version">v3.3.0</span>
+        <span class="timeline-version">v3.3.0 ✓</span>
         <div class="timeline-body">
-          <div class="timeline-title">Métricas de resiliência no Grafana</div>
-          <div class="timeline-desc">Painel Grafana com gauge do estado do CB, taxa de falhas e retries. Integração automática via Micrometer.</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <span class="timeline-version">v3.4.0</span>
-        <div class="timeline-body">
-          <div class="timeline-title">Spring Security + JWT</div>
-          <div class="timeline-desc">Filtro JWT stateless. <code>/api/transcriptions</code> exige <code>ROLE_USER</code>. Endpoint <code>POST /auth/token</code> para geração de tokens em dev.</div>
-        </div>
-      </div>
-      <div class="timeline-item" style="border-bottom:none">
-        <span class="timeline-version">v3.5.0</span>
-        <div class="timeline-body">
-          <div class="timeline-title">Testes de integração</div>
-          <div class="timeline-desc">Testcontainers cobrindo: cache hit/miss, CB abre/fecha, JWT válido/inválido/expirado.</div>
+          <div class="timeline-title">Métricas no Grafana</div>
+          <div class="timeline-desc">Dashboard atualizado com seção Resiliência: estado CB (stat), chamadas por tipo (timeseries), retries por resultado (timeseries).</div>
         </div>
       </div>
     </section>

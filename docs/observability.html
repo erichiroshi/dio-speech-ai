@@ -6,16 +6,15 @@
   <title>Observabilidade — dio-speech-ai</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
-    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
-    td:first-child { color: var(--text); font-family: 'Courier New', monospace; font-size: 13px; }
-    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
-    .badge-done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
-    .badge-pending { background: #1a1a2e; color: #818cf8; border: 1px solid #3730a3; }
-    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: #86efac; overflow-x: auto; line-height: 1.6; margin-top: 10px; }
-    h2 { font-size: 1.2rem; margin: 28px 0 10px; color: var(--text); }
-    .status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
+    pre { background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 12.5px; color: #86efac; overflow-x: auto; line-height: 1.7; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--text); font-family: 'Courier New', monospace; font-size: 12px; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px; }
+    .done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
   </style>
 </head>
 <body>
@@ -28,119 +27,194 @@
       <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
     </nav>
 
-    <h1 style="margin: 24px 0 6px;">Observabilidade</h1>
-    <p style="color: var(--muted); margin-bottom: 24px;">Estratégia de três pilares: métricas, logs estruturados e tracing distribuído.</p>
+    <h1 style="margin: 24px 0 4px;">Observabilidade</h1>
+    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">Três pilares implementados — métricas, logs estruturados e tracing distribuído.</p>
 
+    <!-- ── FLUXO ──────────────────────────────────────────────────────── -->
     <section class="card">
-      <div class="status-row">
-        <h2 style="margin: 0;">Fluxo de observabilidade</h2>
-        <span class="badge badge-done">v2.1.0 parcial</span>
-      </div>
-      <pre>Request
-  │
-  ▼
-API (Spring Boot :8080)
-  │
-  ├── Métricas  →  /actuator/prometheus  →  Prometheus (:9090)   ✓ v2.1.0
-  │                                             ↓
-  │                                         Grafana (:3000)       ⏳ v2.6.0
-  │
-  ├── Logs      →  Console (texto)        →  Loki                 ⏳ v2.2.0
-  │              → logback JSON (v2.2.0)
-  │
-  └── Traces    →  Zipkin (:9411)                                 ⏳ v2.7.0
-                   (OpenTelemetry)</pre>
+      <h2>Fluxo de observabilidade completo</h2>
+      <pre>
+  Request
+    │
+    ▼
+  API (Spring Boot :8080)
+    │
+    ├── Métricas  →  /actuator/prometheus  →  Prometheus (:9090)  ✓ v2.1.0
+    │                                              ↓
+    │                                          Grafana (:3000)     ✓ v2.6.0
+    │                 9 painéis: req/s · erros · cache ratio · Whisper p99
+    │                            CB state · retries · latência · throughput
+    │
+    ├── Logs JSON  →  stdout  →  ingestão (Loki/ELK/qualquer)     ✓ v2.2.0
+    │               Campos: requestId · fileName · fileSizeBytes
+    │                        whisperModel · traceId · spanId
+    │
+    └── Traces  →  Zipkin (:9411)                                  ✓ v2.7.0
+                   Spans automáticos: HTTP recebido + WebClient→Speaches</pre>
     </section>
 
+    <!-- ── MÉTRICAS ───────────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Métricas — implementadas (v2.1.0)</h2>
-      <p style="color:var(--muted); font-size:13px; margin-bottom: 4px;">Expostas em <code>/actuator/prometheus</code> · Scraping pelo Prometheus a cada 10s</p>
+      <h2>Métricas <span class="badge done">v2.1.0 + v2.5.0 + v3.3.0</span></h2>
+
+      <h3>Métricas de negócio (TranscriptionMetrics)</h3>
       <table>
-        <thead>
-          <tr><th>Métrica</th><th>Tipo</th><th>Tags</th><th>Descrição</th></tr>
-        </thead>
+        <thead><tr><th>Métrica</th><th>Tipo</th><th>Tags</th><th>Descrição</th></tr></thead>
         <tbody>
-          <tr>
-            <td>transcription.requests.total</td>
-            <td>Counter</td>
-            <td>status=success|error</td>
-            <td>Total de transcrições realizadas</td>
-          </tr>
-          <tr>
-            <td>transcription.whisper.duration</td>
-            <td>Timer</td>
-            <td>—</td>
-            <td>Latência das chamadas ao Whisper (p50/p95/p99)</td>
-          </tr>
-          <tr>
-            <td>transcription.file.size.bytes</td>
-            <td>Distribution</td>
-            <td>—</td>
-            <td>Distribuição dos tamanhos de arquivo enviados</td>
-          </tr>
-          <tr>
-            <td>http.server.requests</td>
-            <td>Timer</td>
-            <td>uri, method, status</td>
-            <td>Métricas HTTP automáticas (Spring Boot)</td>
-          </tr>
+          <tr><td>transcription.requests.total</td><td>Counter</td><td>status=success|error</td><td>Total de transcrições</td></tr>
+          <tr><td>transcription.whisper.duration</td><td>Timer</td><td>—</td><td>Latência Whisper (p50/p95/p99 + histograma)</td></tr>
+          <tr><td>transcription.file.size.bytes</td><td>Distribution</td><td>—</td><td>Distribuição dos tamanhos de arquivo</td></tr>
+          <tr><td>transcription.cache.total</td><td>Counter</td><td>result=hit|miss</td><td>Cache hits e misses</td></tr>
         </tbody>
       </table>
-    </section>
 
-    <section class="card">
-      <h2>Endpoints Actuator</h2>
+      <h3>Métricas de resiliência (Resilience4j → Micrometer automático)</h3>
       <table>
-        <thead>
-          <tr><th>Endpoint</th><th>Descrição</th></tr>
-        </thead>
+        <thead><tr><th>Métrica</th><th>Descrição</th></tr></thead>
         <tbody>
-          <tr><td>/actuator/health</td><td>Status da aplicação (UP/DOWN)</td></tr>
-          <tr><td>/actuator/metrics</td><td>Lista todas as métricas disponíveis</td></tr>
-          <tr><td>/actuator/prometheus</td><td>Métricas no formato Prometheus</td></tr>
-          <tr><td>/actuator/info</td><td>Informações da aplicação</td></tr>
+          <tr><td>resilience4j_circuitbreaker_state</td><td>Estado: 0=CLOSED · 1=OPEN · 2=HALF_OPEN</td></tr>
+          <tr><td>resilience4j_circuitbreaker_calls_seconds_count</td><td>Chamadas por tipo: successful/failed/not_permitted</td></tr>
+          <tr><td>resilience4j_retry_calls_total</td><td>Retries: successful_with_retry / failed_with_retry</td></tr>
         </tbody>
       </table>
-    </section>
 
-    <section class="card">
-      <h2>Queries Prometheus úteis</h2>
-      <pre># Taxa de sucesso por minuto
-rate(transcription_requests_total{status="success"}[1m])
-
-# Taxa de erros por minuto
-rate(transcription_requests_total{status="error"}[1m])
+      <h3>Queries Prometheus úteis</h3>
+      <pre>
+# Taxa de sucesso por minuto
+rate(transcription_requests_total{status="success"}[1m]) * 60
 
 # p99 de latência do Whisper
-histogram_quantile(0.99,
-  rate(transcription_whisper_duration_seconds_bucket[5m]))
+histogram_quantile(0.99, rate(transcription_whisper_duration_seconds_bucket[5m]))
 
-# Tamanho médio dos arquivos (bytes)
-transcription_file_size_bytes_sum / transcription_file_size_bytes_count
+# Cache hit ratio
+rate(transcription_cache_total{result="hit"}[5m])
+  / (rate(transcription_cache_total{result="hit"}[5m])
+     + rate(transcription_cache_total{result="miss"}[5m]) + 0.0001)
 
-# Throughput HTTP geral (req/s)
-rate(http_server_requests_seconds_count[1m])</pre>
+# Estado do circuit breaker (0=fechado, 1=aberto)
+resilience4j_circuitbreaker_state{name="whisper"}
+
+# Chamadas não-permitidas pelo CB (circuito aberto)
+rate(resilience4j_circuitbreaker_calls_seconds_count{name="whisper",kind="not_permitted"}[1m])</pre>
     </section>
 
+    <!-- ── LOGS ──────────────────────────────────────────────────────── -->
     <section class="card">
-      <div class="status-row">
-        <h2 style="margin: 0;">Logs estruturados</h2>
-        <span class="badge badge-pending">⏳ v2.2.0</span>
-      </div>
-      <p style="color:var(--muted); font-size:13px;">Atualmente os logs são texto simples via Logback padrão. Na v2.2.0 serão migrados para JSON com <code>logstash-logback-encoder</code>, enriquecidos via MDC com <code>requestId</code>, <code>fileName</code> e <code>fileSizeBytes</code>.</p>
+      <h2>Logs estruturados <span class="badge done">v2.2.0</span></h2>
+
+      <h3>Dois perfis — logback-spring.xml</h3>
+      <table>
+        <thead><tr><th>Perfil</th><th>Formato</th><th>Ativação</th></tr></thead>
+        <tbody>
+          <tr><td>prod (padrão)</td><td>JSON via logstash-logback-encoder</td><td>sem argumento</td></tr>
+          <tr><td>dev</td><td>Texto colorido com requestId e fileName</td><td><code>--spring.profiles.active=dev</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Campos MDC por requisição</h3>
+      <table>
+        <thead><tr><th>Campo</th><th>Quem popula</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>requestId</td><td>MdcLoggingFilter</td><td>UUID único por request</td></tr>
+          <tr><td>httpMethod</td><td>MdcLoggingFilter</td><td>POST, GET...</td></tr>
+          <tr><td>requestUri</td><td>MdcLoggingFilter</td><td>/api/transcriptions</td></tr>
+          <tr><td>fileName</td><td>TranscriptionService</td><td>Nome original do arquivo</td></tr>
+          <tr><td>fileSizeBytes</td><td>TranscriptionService</td><td>Tamanho em bytes</td></tr>
+          <tr><td>whisperModel</td><td>SpeechToTextClient</td><td>Systran/faster-whisper-small</td></tr>
+          <tr><td>traceId / spanId</td><td>Micrometer Tracing (automático)</td><td>Hex OpenTelemetry</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Exemplo de log JSON (prod)</h3>
+      <pre>
+{
+  "@timestamp": "2026-04-11T12:00:00.123Z",
+  "level": "INFO",
+  "logger": "TranscriptionService",
+  "message": "Transcrição concluída | chars=142 | size=461842bytes",
+  "requestId": "a3f2c1d0-7f3e-4b2a-9c1d-e8f5a6b7c8d9",
+  "fileName": "audio.wav",
+  "fileSizeBytes": "461842",
+  "whisperModel": "Systran/faster-whisper-small",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "00f067aa0ba902b7",
+  "app": "dio-speech-ai",
+  "version": "3.5.0"
+}</pre>
+
+      <p style="color:var(--muted); font-size:13px; margin-top:10px;">
+        O <code>requestId</code> também é incluído no <code>ProblemDetail</code> de respostas de erro,
+        permitindo que o cliente correlacione um erro 4xx/5xx com os logs do servidor.
+        O header <code>X-Request-Id</code> é propagado em todas as respostas HTTP.
+      </p>
     </section>
 
+    <!-- ── TRACING ────────────────────────────────────────────────────── -->
     <section class="card">
-      <div class="status-row">
-        <h2 style="margin: 0;">Tracing distribuído</h2>
-        <span class="badge badge-pending">⏳ v2.7.0</span>
-      </div>
-      <p style="color:var(--muted); font-size:13px;">Tracing com OpenTelemetry + Zipkin será implementado na v2.7.0. O <code>trace_id</code> aparecerá automaticamente nos logs JSON via MDC, conectando métricas, logs e traces num mesmo fluxo rastreável.</p>
+      <h2>Tracing distribuído <span class="badge done">v2.7.0</span></h2>
+
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+        OpenTelemetry SDK via <code>micrometer-tracing-bridge-otel</code>.
+        Exportação para Zipkin com <code>opentelemetry-exporter-zipkin</code>.
+        Sampling 100% (ajustável via <code>TRACING_SAMPLING</code> env).
+      </p>
+
+      <h3>Spans automáticos por requisição</h3>
+      <table>
+        <thead><tr><th>Span</th><th>O que cobre</th></tr></thead>
+        <tbody>
+          <tr><td>HTTP POST /api/transcriptions</td><td>Span raiz — toda a requisição de entrada</td></tr>
+          <tr><td>WebClient POST /v1/audio/transcriptions</td><td>Chamada ao Speaches (Whisper)</td></tr>
+          <tr><td>Redis GET/SET</td><td>Leitura e escrita no cache (automático via Spring Data)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Acessar Zipkin</h3>
+      <pre>
+# Subir ambiente
+docker compose up -d   # ou docker compose -f docker-compose.dev.yml up -d
+
+# Fazer uma transcrição
+curl -s -X POST http://localhost:8080/api/transcriptions \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@audio.wav;type=audio/wav"
+
+# Abrir UI
+open http://localhost:9411
+# Pesquisar por: Service Name = "dio-speech-ai"</pre>
     </section>
 
-    <footer>
-      <p>Desenvolvido por Eric Hiroshi</p>
-    </footer>
+    <!-- ── GRAFANA ────────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Grafana — Dashboard <span class="badge done">v2.6.0 + v3.3.0</span></h2>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:10px;">
+        Acesse <code>http://localhost:3000</code> (admin/admin) — dashboard abre automaticamente.
+        Provisioning via <code>monitoring/grafana/provisioning/</code> — nenhuma configuração manual necessária.
+      </p>
+      <table>
+        <thead><tr><th>Seção</th><th>Painéis</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="font-family:inherit">Requisições</td>
+            <td>Taxa req/s · Taxa de erros · Cache hit ratio · Whisper p99 · Tamanho médio arquivo</td>
+          </tr>
+          <tr>
+            <td style="font-family:inherit">Latência Whisper</td>
+            <td>Timeseries p50/p95/p99 · Throughput success/error por minuto</td>
+          </tr>
+          <tr>
+            <td style="font-family:inherit">Cache Redis</td>
+            <td>Hit vs miss por minuto · Hit ratio gauge</td>
+          </tr>
+          <tr>
+            <td style="font-family:inherit">Resiliência</td>
+            <td>Estado do Circuit Breaker · Chamadas por tipo · Retries por resultado</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer><p>Desenvolvido por Eric Hiroshi</p></footer>
   </div>
 </body>
 </html>
