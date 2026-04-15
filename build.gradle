@@ -28,7 +28,7 @@ ext{
 	logbackencoderVersion = '9.0'
 	aopVersion = '3.5.13'
 	resilience4jVersion = '2.4.0'
-	jwtVersion = '9.37.3'
+	jwtVersion = '9.48'
 }
 
 dependencies {
