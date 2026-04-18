@@ -11,7 +11,8 @@
     .stack-item .name { font-size: 13px; font-weight: 600; color: var(--text); }
     .stack-item .desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
     .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 5px; }
-    .done   { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .done    { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .planned { background: #0c1a2a; color: #60a5fa; border: 1px solid #1e3a5f; }
     .phase-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .phase-row:last-child { border-bottom: none; }
     .phase-num { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 56px; }
@@ -26,7 +27,7 @@
         src="https://github.com/erichiroshi/dio-speech-ai/blob/main/images/logo%20eric%20hiroshi.png?raw=true"
         alt="Logo Eric Hiroshi" />
       <h1>dio-speech-ai</h1>
-      <p class="subtitle">API de transcrição de áudio com foco em arquitetura moderna, observabilidade e escalabilidade</p>
+      <p class="subtitle">API de transcrição de áudio — arquitetura evolutiva com foco em qualidade, resiliência e escalabilidade</p>
     </header>
 
     <nav>
@@ -42,14 +43,15 @@
       <h2>🚀 Sobre o projeto</h2>
       <p>
         O <strong>dio-speech-ai</strong> é uma API REST para transcrição de áudio com <strong>Whisper</strong>
-        via Speaches, desenvolvida em quatro fases evolutivas para o desafio <strong>DIO × Globant</strong>.
-        Demonstra boas práticas de arquitetura Java moderna: observabilidade completa, cache inteligente,
-        resiliência a falhas, autenticação stateless e documentação automática via OpenAPI.
+        via Speaches, construída em fases evolutivas para o desafio <strong>DIO × Globant</strong>.
+        Cada fase adiciona uma camada de maturidade: da API base até arquitetura hexagonal,
+        mensageria assíncrona e notificações multicanal.
       </p>
     </section>
 
     <section class="card">
-      <h2>✅ Roadmap — todas as fases concluídas</h2>
+      <h2>Roadmap</h2>
+
       <div class="phase-row">
         <span class="phase-num">Fase 1</span>
         <span class="phase-desc">API base — transcrição síncrona, Docker Compose, ProblemDetail (RFC 9457)</span>
@@ -64,7 +66,7 @@
       </div>
       <div class="phase-row">
         <span class="phase-num">Fase 3</span>
-        <span class="phase-desc">Resiliência + Segurança — CircuitBreaker · Retry · JWT · Testes Integração</span>
+        <span class="phase-desc">Resiliência + Segurança — CircuitBreaker · Retry · JWT · Testcontainers</span>
         <span class="badge done">✓</span>
         <span class="phase-ver">v3.1–v3.5</span>
       </div>
@@ -74,6 +76,37 @@
         <span class="badge done">✓</span>
         <span class="phase-ver">v4.1.0</span>
       </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 5</span>
+        <span class="phase-desc">CI/CD — Jacoco · SonarCloud · GitHub Actions · Docker Hub · Release automático</span>
+        <span class="badge planned">em breve</span>
+        <span class="phase-ver">v5.1–v5.3</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 6</span>
+        <span class="phase-desc">Bean Validation — validação de DTOs · tratamento de erros estruturado</span>
+        <span class="badge planned">planejado</span>
+        <span class="phase-ver">v6.1–v6.2</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 7</span>
+        <span class="phase-desc">Arquitetura Hexagonal — Ports & Adapters · domínio desacoplado · adapters intercambiáveis</span>
+        <span class="badge planned">planejado</span>
+        <span class="phase-ver">v7.1–v7.6</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 8</span>
+        <span class="phase-desc">Mensageria — RabbitMQ · produtor de eventos · consumer · DLQ</span>
+        <span class="badge planned">planejado</span>
+        <span class="phase-ver">v8.1–v8.3</span>
+      </div>
+      <div class="phase-row">
+        <span class="phase-num">Fase 9</span>
+        <span class="phase-desc">Notificações — e-mail · SMS · WhatsApp via consumers RabbitMQ</span>
+        <span class="badge planned">planejado</span>
+        <span class="phase-ver">v9.1–v9.3</span>
+      </div>
+
       <div class="actions" style="margin-top: 16px;">
         <a class="btn btn-primary" href="roadmap_dio_speech_ai.html">Ver roadmap detalhado</a>
       </div>
@@ -108,34 +141,29 @@
     </section>
 
     <section class="card">
-      <h2>🔐 Autenticação</h2>
-      <p>Obter token JWT e usar na transcrição:</p>
-      <div class="actions" style="margin-top:10px;">
-        <code>curl -s -X POST http://localhost:8080/auth/token \<br>
-&nbsp;&nbsp;-H 'Content-Type: application/json' \<br>
-&nbsp;&nbsp;-d '{"username":"user","password":"any"}' | jq -r .token</code>
-      </div>
-    </section>
-
-    <section class="card">
       <h2>🧠 Stack completa</h2>
       <div class="stack-grid">
         <div class="stack-item"><div class="name">Java 25</div><div class="desc">Linguagem principal</div></div>
         <div class="stack-item"><div class="name">Spring Boot 4.x</div><div class="desc">Framework web</div></div>
         <div class="stack-item"><div class="name">Lombok</div><div class="desc">@RequiredArgsConstructor</div></div>
         <div class="stack-item"><div class="name">Speaches (Whisper)</div><div class="desc">Motor de transcrição</div></div>
-        <div class="stack-item"><div class="name">Docker Compose</div><div class="desc">Dev (5 serv.) + Prod (6 serv.)</div></div>
+        <div class="stack-item"><div class="name">Docker Compose</div><div class="desc">Dev + Prod</div></div>
         <div class="stack-item"><div class="name">Prometheus <span class="badge done">v2.1</span></div><div class="desc">Métricas e scraping</div></div>
         <div class="stack-item"><div class="name">Logs JSON <span class="badge done">v2.2</span></div><div class="desc">Logback + MDC + requestId</div></div>
         <div class="stack-item"><div class="name">Redis <span class="badge done">v2.3</span></div><div class="desc">Cache SHA-256, TTL 24h</div></div>
-        <div class="stack-item"><div class="name">Cache <span class="badge done">v2.4</span></div><div class="desc">cached=true na resposta</div></div>
-        <div class="stack-item"><div class="name">Grafana <span class="badge done">v2.6</span></div><div class="desc">9 painéis provisionados</div></div>
+        <div class="stack-item"><div class="name">Grafana <span class="badge done">v2.6</span></div><div class="desc">12 painéis provisionados</div></div>
         <div class="stack-item"><div class="name">Zipkin/OTel <span class="badge done">v2.7</span></div><div class="desc">Tracing distribuído</div></div>
         <div class="stack-item"><div class="name">CircuitBreaker <span class="badge done">v3.1</span></div><div class="desc">Resilience4j, fallback 503</div></div>
-        <div class="stack-item"><div class="name">Retry <span class="badge done">v3.2</span></div><div class="desc">Backoff 500ms→2s</div></div>
-        <div class="stack-item"><div class="name">JWT <span class="badge done">v3.4</span></div><div class="desc">Spring Security stateless</div></div>
-        <div class="stack-item"><div class="name">Testcontainers <span class="badge done">v3.5</span></div><div class="desc">6 cenários de integração</div></div>
+        <div class="stack-item"><div class="name">Retry <span class="badge done">v3.2</span></div><div class="desc">Backoff exponencial</div></div>
+        <div class="stack-item"><div class="name">Testcontainers <span class="badge done">v3.5</span></div><div class="desc">Testes de integração reais</div></div>
         <div class="stack-item"><div class="name">SpringDoc OpenAPI <span class="badge done">v4.1</span></div><div class="desc">Swagger UI + OAS 3.1</div></div>
+        <div class="stack-item"><div class="name">Jacoco <span class="badge planned">v5.1</span></div><div class="desc">Cobertura de testes</div></div>
+        <div class="stack-item"><div class="name">SonarCloud <span class="badge planned">v5.2</span></div><div class="desc">Qualidade contínua</div></div>
+        <div class="stack-item"><div class="name">GitHub Actions <span class="badge planned">v5.2</span></div><div class="desc">CI/CD automático</div></div>
+        <div class="stack-item"><div class="name">Bean Validation <span class="badge planned">v6.1</span></div><div class="desc">DTOs validados</div></div>
+        <div class="stack-item"><div class="name">Hexagonal <span class="badge planned">v7.x</span></div><div class="desc">Ports & Adapters</div></div>
+        <div class="stack-item"><div class="name">RabbitMQ <span class="badge planned">v8.x</span></div><div class="desc">Mensageria assíncrona</div></div>
+        <div class="stack-item"><div class="name">Notificações <span class="badge planned">v9.x</span></div><div class="desc">SMS · WhatsApp · e-mail</div></div>
       </div>
     </section>
 

@@ -14,7 +14,8 @@
     td { padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
     td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
     .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px; }
-    .done { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .done    { background: #0c2a1a; color: #22c55e; border: 1px solid #14532d; }
+    .planned { background: #0c1a2a; color: #60a5fa; border: 1px solid #1e3a5f; }
     .port { font-family: 'Courier New', monospace; font-size: 12px; color: #60a5fa; }
   </style>
 </head>
@@ -25,170 +26,171 @@
       <a href="architecture.html">Arquitetura</a>
       <a href="observability.html">Observabilidade</a>
       <a href="resilience.html">Resiliência</a>
+      <a href="swagger.html">API Reference</a>
       <a href="https://github.com/erichiroshi/dio-speech-ai/blob/main/README.md">README</a>
     </nav>
 
-    <h1 style="margin: 24px 0 4px;">Arquitetura — C4 Model</h1>
-    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">Versão final v3.5.0 — Contexto · Containers · Componentes</p>
+    <h1 style="margin: 24px 0 4px;">Arquitetura</h1>
+    <p style="color:var(--muted); font-size:13px; margin-bottom: 24px;">Estado atual (v4.1.0) e evolução planejada até v9.x</p>
 
-    <!-- ── NÍVEL 1 ──────────────────────────────────────────────────── -->
+    <!-- ── ESTADO ATUAL ──────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Nível 1 — Contexto</h2>
+      <h2>Arquitetura atual — v4.1.0</h2>
       <pre>
-  Cliente HTTP (Postman / curl / Frontend)
-       │
-       │  POST /api/transcriptions
-       │  Authorization: Bearer &lt;JWT&gt;
-       │  multipart/form-data { file: audio }
-       ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  Sistema: dio-speech-ai                                 │
-  │                                                         │
-  │  Spring Boot API  :8080  ──WebClient──►  Speaches :8000 │
-  │                                         (Whisper AI)    │
-  └─────────────────────────────────────────────────────────┘</pre>
+  Cliente HTTP
+    │  POST /api/transcriptions
+    │  multipart/form-data { file: audio }
+    ▼
+  Spring Boot API  :8080
+    │
+    ├── MdcLoggingFilter (requestId + MDC por requisição)
+    │
+    ├── TranscriptionController
+    │     └── TranscriptionService
+    │           ├── CacheService → SHA-256 → Redis
+    │           │     ├── HIT  → retorna em ~15ms
+    │           │     └── MISS → chama Whisper
+    │           │
+    │           └── SpeechToTextClient
+    │                 ├── @Retry (3x, backoff 500ms→2s)
+    │                 └── @CircuitBreaker (CLOSED/OPEN/HALF_OPEN)
+    │                       └── POST speaches:8000/v1/audio/transcriptions
+    │
+    └── TranscriptionMetrics (Micrometer)
+
+  Infraestrutura (Docker Compose)
+    ├── speaches    :8000  — Whisper GPU
+    ├── redis       :6379  — Cache SHA-256 (TTL 24h)
+    ├── prometheus  :9090  — Métricas
+    ├── grafana     :3000  — Dashboards
+    └── zipkin      :9411  — Tracing</pre>
     </section>
 
-    <!-- ── NÍVEL 2 ──────────────────────────────────────────────────── -->
+    <!-- ── EVOLUÇÃO PLANEJADA ──────────────────────────────────────────── -->
     <section class="card">
-      <h2>Nível 2 — Containers (v3.5.0 — stack completa)</h2>
+      <h2>Arquitetura alvo — v9.x <span class="badge planned">planejado</span></h2>
       <pre>
-  ┌─── Docker network: backend ──────────────────────────────────────────────┐
-  │                                                                          │
-  │  Cliente ──HTTP:8080──► dio-speaches-ai (Spring Boot)                    │
-  │                                │                                         │
-  │                    ┌───────────┼──────────────┐                          │
-  │                    │           │              │                          │
-  │                    ▼           ▼              ▼                          │
-  │             redis:6379   speaches:8000   zipkin:9411                     │
-  │             (cache SHA)  (Whisper AI)   (tracing)                        │
-  │                                                                          │
-  │  prometheus:9090 ─── scrape /actuator/prometheus cada 10s ──────────►    │
-  │                                                                          │
-  │  grafana:3000 ─── datasource: prometheus:9090 ──────────────────────►    │
-  │                                                                          │
-  └──────────────────────────────────────────────────────────────────────────┘</pre>
+  [ HTTP ]       [ RabbitMQ: requests ]        ← Adapters de ENTRADA
+       │                   │
+       ▼                   ▼
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  TranscribeAudioUseCase (APPLICATION)                           │
+  │    1. SHA-256 dos bytes                                         │
+  │    2. TranscriptionCachePort.get() → HIT retorna                │
+  │    3. SpeechToTextPort.transcribe() → Whisper (ou outro)        │
+  │    4. TranscriptionCachePort.put()                              │
+  │    5. TranscriptionEventPort.publish()                          │
+  └─────────────────────────────────────────────────────────────────┘
+       │                   │                   │
+       ▼                   ▼                   ▼
+  WhisperAdapter   RedisCache          RabbitMQ:events   ← Adapters de SAÍDA
+  (ou OpenAI...)   Adapter             (TranscriptionCompletedEvent)
+                                              │
+                              ┌───────────────┼───────────────┐
+                              ▼               ▼               ▼
+                         E-mail svc      SMS svc       WhatsApp svc
+                         (Spring Mail)   (Twilio...)   (Meta API...)</pre>
 
-      <h3>Serviços e portas</h3>
-      <table>
-        <thead><tr><th>Serviço</th><th>Imagem</th><th>Porta</th><th>Desde</th></tr></thead>
-        <tbody>
-          <tr><td>speaches</td><td>ghcr.io/speaches-ai/speaches:latest-cuda</td><td class="port">8000</td><td><span class="badge done">v1.0.0</span></td></tr>
-          <tr><td>dio-speaches-ai</td><td>build local (docker/Dockerfile)</td><td class="port">8080</td><td><span class="badge done">v1.0.0</span></td></tr>
-          <tr><td>prometheus</td><td>prom/prometheus:latest</td><td class="port">9090</td><td><span class="badge done">v2.1.0</span></td></tr>
-          <tr><td>redis</td><td>redis:7-alpine</td><td class="port">6379</td><td><span class="badge done">v2.3.0</span></td></tr>
-          <tr><td>grafana</td><td>grafana/grafana:latest</td><td class="port">3000</td><td><span class="badge done">v2.6.0</span></td></tr>
-          <tr><td>zipkin</td><td>openzipkin/zipkin:latest</td><td class="port">9411</td><td><span class="badge done">v2.7.0</span></td></tr>
-        </tbody>
-      </table>
-
-      <h3>Composes</h3>
-      <table>
-        <thead><tr><th>Arquivo</th><th>Serviços</th><th>Uso</th></tr></thead>
-        <tbody>
-          <tr><td>docker-compose.dev.yml</td><td>speaches + redis + prometheus + grafana + zipkin</td><td>App local via <code>./gradlew bootRun</code></td></tr>
-          <tr><td>docker-compose.yml</td><td>+ dio-speaches-ai (6 serviços)</td><td>Stack prod containerizada</td></tr>
-        </tbody>
-      </table>
+      <p style="color:var(--muted); font-size:13px; margin-top:12px;">
+        O domínio não conhece Redis, Whisper, RabbitMQ, Twilio ou Spring.
+        Trocar qualquer tecnologia = criar um novo adapter. Domínio intocado.
+      </p>
     </section>
 
-    <!-- ── NÍVEL 3 ──────────────────────────────────────────────────── -->
+    <!-- ── CI/CD ─────────────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Nível 3 — Componentes (dentro da API)</h2>
+      <h2>Pipeline CI/CD <span class="badge planned">Fase 5</span></h2>
       <pre>
-  POST /api/transcriptions
-  Authorization: Bearer &lt;JWT&gt;
-         │
-         ▼
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  SecurityFilterChain (v3.4.0)                                        │
-  │    JwtAuthFilter → valida HS256 → popula SecurityContext             │
-  │    /actuator/health, /actuator/prometheus, /auth/token → públicos    │
-  │    /api/transcriptions → requer ROLE_USER                            │
-  └───────────────────────────┬──────────────────────────────────────────┘
-                              │
-  ┌───────────────────────────▼──────────────────────────────────────────┐
-  │  MdcLoggingFilter (v2.2.0)                                           │
-  │    requestId (UUID), httpMethod, requestUri → MDC                    │
-  │    X-Request-Id header na resposta                                   │
-  └───────────────────────────┬──────────────────────────────────────────┘
-                              │
-  ┌───────────────────────────▼──────────────────────────────────────────┐
-  │  TranscriptionController                                             │
-  └───────────────────────────┬──────────────────────────────────────────┘
-                              │ transcribe(file)
-  ┌───────────────────────────▼──────────────────────────────────────────┐
-  │  TranscriptionService                                                │
-  │    validate() → MDC(fileName, fileSizeBytes) → metrics.recordSize()  │
-  │         │                                                            │
-  │    CacheService (v2.4.0)                                             │
-  │         ├── SHA-256(bytes) → "transcription:{hash}"                  │
-  │         ├── HIT  → metrics.recordCacheHit() → return cached=true     │
-  │         └── MISS → metrics.recordCacheMiss() → chama Whisper         │
-  │                          │                                           │
-  │    metrics.recordWhisperCall(supplier) ← Timer p50/p95/p99           │
-  └───────────────────────────┬──────────────────────────────────────────┘
-                              │
-  ┌───────────────────────────▼──────────────────────────────────────────┐
-  │  SpeechToTextClient (v3.2.0)                                         │
-  │    @Retry(whisper)        → 3x, backoff 500ms→1s→2s                  │
-  │    @CircuitBreaker(whisper) → CLOSED/OPEN(30s)/HALF_OPEN(3 calls)    │
-  │    fallback → ServiceUnavailableException → 503                      │
-  │         │                                                            │
-  │    WebClient POST speaches:8000/v1/audio/transcriptions              │
-  └──────────────────────────────────────────────────────────────────────┘
+  Push (qualquer branch) / PR para main
+    │
+    ├── ci.yml ──────────────────────────────────────────────────────
+    │     JDK 25 + cache Gradle
+    │     ./gradlew clean build  (testes + Jacoco 70%)
+    │     ./gradlew sonar        (SonarCloud Quality Gate)
+    │     Upload Codecov         (cobertura visual no PR)
+    │
+    └── docker.yml ──────────────────────────────────────────────────
+          Docker Buildx + BuildKit + cache GHA
+          metadata-action → tags: sha / branch / latest (main) / pr-N
+          Push apenas se não for PR
+          Trivy scan (CRITICAL+HIGH)
 
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  TranscriptionMetrics (v2.5.0)                                       │
-  │    Counter: requests.total{status=success|error}                     │
-  │    Counter: cache.total{result=hit|miss}                             │
-  │    Timer:   whisper.duration (p50/p95/p99 + histograma)              │
-  │    Distribution: file.size.bytes                                     │
-  └──────────────────────────────────────────────────────────────────────┘
+  Push tag v*
+    │
+    ├── release.yml ─────────────────────────────────────────────────
+    │     Re-tag imagem latest → vX.Y.Z
+    │     GitHub Release com release notes automáticas + instruções Docker
+    │
+    └── docs.yml ────────────────────────────────────────────────────
+          pandoc + xelatex → readme_pdf.md → .pdf
+          Artifact 30 dias + anexado ao release</pre>
 
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  GlobalExceptionHandler                                              │
-  │    TranscriptionException     → 400  │  ServiceUnavailable → 503     │
-  │    JwtValidationException     → 401  │  IllegalArgument   → 400      │
-  │    NoResourceFound            → 404  │  Exception         → 500      │
-  │    requestId do MDC incluído no ProblemDetail                        │
-  └──────────────────────────────────────────────────────────────────────┘</pre>
-
-      <h3>Pacotes</h3>
+      <h3>Secrets necessários</h3>
       <table>
-        <thead><tr><th>Pacote</th><th>Responsabilidade</th><th>Versão</th></tr></thead>
+        <thead><tr><th>Secret</th><th>Descrição</th></tr></thead>
         <tbody>
-          <tr><td>config</td><td>WebClientConfig, RedisConfig, MdcLoggingFilter</td><td><span class="badge done">v1–v2.3</span></td></tr>
-          <tr><td>security</td><td>JwtProperties, JwtService, JwtAuthFilter, SecurityConfig, AuthController</td><td><span class="badge done">v3.4.0</span></td></tr>
-          <tr><td>transcription/cache</td><td>CacheService — SHA-256 + Redis TTL</td><td><span class="badge done">v2.4.0</span></td></tr>
-          <tr><td>transcription/controller</td><td>Receber HTTP, delegar ao service</td><td><span class="badge done">v1.0.0</span></td></tr>
-          <tr><td>transcription/dto</td><td>TranscriptionResponse (+ cached), WhisperResponse</td><td><span class="badge done">v1–v2.4</span></td></tr>
-          <tr><td>transcription/exception</td><td>TranscriptionException, ServiceUnavailableException, GlobalExceptionHandler</td><td><span class="badge done">v1–v3.1</span></td></tr>
-          <tr><td>transcription/metrics</td><td>TranscriptionMetrics — Counter, Timer, Distribution</td><td><span class="badge done">v2.1–v2.5</span></td></tr>
-          <tr><td>transcription/service</td><td>TranscriptionService (orquestração), SpeechToTextClient (Retry+CB)</td><td><span class="badge done">v1–v3.2</span></td></tr>
+          <tr><td>DOCKERHUB_USERNAME</td><td>erichiroshi</td></tr>
+          <tr><td>DOCKERHUB_TOKEN</td><td>Token Docker Hub (não senha)</td></tr>
+          <tr><td>SONAR_TOKEN</td><td>Token SonarCloud</td></tr>
+          <tr><td>CODECOV_TOKEN</td><td>Token Codecov</td></tr>
         </tbody>
       </table>
     </section>
 
-    <!-- ── EVOLUÇÃO ──────────────────────────────────────────────────── -->
+    <!-- ── ESTRUTURA HEXAGONAL ────────────────────────────────────────── -->
     <section class="card">
-      <h2>Evolução por versão</h2>
+      <h2>Estrutura de pacotes — alvo v7.x <span class="badge planned">planejado</span></h2>
+      <pre>
+  com.example.diospeechai/
+  │
+  ├── shared/                        # Transversal
+  │   ├── config/                    # WebClient, Redis, MDC, OpenAPI
+  │   └── exception/                 # GlobalExceptionHandler
+  │
+  ├── auth/
+  │   ├── domain/port/               # TokenServicePort (interface)
+  │   ├── application/               # GenerateTokenUseCase
+  │   ├── infrastructure/jwt/        # JwtTokenAdapter, JwtProperties
+  │   └── adapter/in/http/           # AuthController, DTOs, documentação
+  │
+  └── transcription/
+      ├── domain/
+      │   ├── model/                 # Transcription (entidade)
+      │   └── port/
+      │       ├── in/                # TranscribeAudioPort
+      │       └── out/               # SpeechToTextPort
+      │                              # TranscriptionCachePort
+      │                              # TranscriptionEventPort
+      ├── application/               # TranscribeAudioUseCase
+      │   ├── command/               # TranscribeCommand
+      │   └── result/                # TranscriptionResult
+      ├── infrastructure/
+      │   ├── speechtotext/whisper/  # WhisperAdapter
+      │   ├── cache/                 # RedisTranscriptionCacheAdapter
+      │   └── messaging/rabbit/      # RabbitConfig, RabbitEventAdapter
+      ├── adapter/
+      │   ├── in/http/               # TranscriptionController
+      │   ├── in/messaging/          # TranscriptionRequestConsumer
+      │   └── out/messaging/event/   # TranscriptionCompletedEvent
+      ├── metrics/                   # TranscriptionMetrics
+      └── exception/                 # TranscriptionException, ServiceUnavailable</pre>
+    </section>
+
+    <!-- ── EVOLUÇÃO POR VERSÃO ────────────────────────────────────────── -->
+    <section class="card">
+      <h2>Evolução por fase</h2>
       <table>
-        <thead><tr><th>Versão</th><th>O que foi adicionado</th></tr></thead>
+        <thead><tr><th>Fase</th><th>Versões</th><th>O que muda</th></tr></thead>
         <tbody>
-          <tr><td>v1.0.0</td><td>API REST, WebClient→Speaches, ProblemDetail, Docker Compose (speaches + API)</td></tr>
-          <tr><td>v2.1.0</td><td>Micrometer + Prometheus, TranscriptionMetrics, container prometheus</td></tr>
-          <tr><td>v2.2.0</td><td>Logback JSON, MdcLoggingFilter (requestId), MDC por transcrição</td></tr>
-          <tr><td>v2.3.0</td><td>Redis 7-alpine no Compose, RedisConfig com Jackson serializer</td></tr>
-          <tr><td>v2.4.0</td><td>CacheService SHA-256, fluxo cache-aside, campo <code>cached</code> na resposta</td></tr>
-          <tr><td>v2.5.0</td><td>Contadores cache hit/miss no TranscriptionMetrics</td></tr>
-          <tr><td>v2.6.0</td><td>Grafana com provisioning automático, dashboard com 9 painéis</td></tr>
-          <tr><td>v2.7.0</td><td>OpenTelemetry + Zipkin, traceId/spanId nos logs JSON</td></tr>
-          <tr><td>v3.1.0</td><td>Resilience4j CircuitBreaker no SpeechToTextClient, fallback 503</td></tr>
-          <tr><td>v3.2.0</td><td>@Retry com backoff exponencial (500ms→1s→2s)</td></tr>
-          <tr><td>v3.3.0</td><td>Dashboard Grafana v2 com painéis de resiliência (CB state + retries)</td></tr>
-          <tr><td>v3.4.0</td><td>Spring Security + JWT stateless (HS256), SecurityConfig, AuthController</td></tr>
-          <tr><td>v3.5.0</td><td>Testcontainers + MockWebServer, 6 cenários de integração</td></tr>
+          <tr><td>Fase 1 <span class="badge done">✓</span></td><td>v1.0.0</td><td>API REST, Docker Compose, ProblemDetail RFC 9457</td></tr>
+          <tr><td>Fase 2 <span class="badge done">✓</span></td><td>v2.1–v2.7</td><td>Prometheus, Grafana, Zipkin/OTel, Redis, Cache SHA-256, Logs JSON</td></tr>
+          <tr><td>Fase 3 <span class="badge done">✓</span></td><td>v3.1–v3.5</td><td>CircuitBreaker, Retry, JWT (temporário), Testcontainers</td></tr>
+          <tr><td>Fase 4 <span class="badge done">✓</span></td><td>v4.1.0</td><td>SpringDoc OpenAPI 3.1, Swagger UI, interfaces de documentação</td></tr>
+          <tr><td>Fase 5 <span class="badge planned">→</span></td><td>v5.1–v5.3</td><td>Jacoco, SonarCloud, ci.yml, docker.yml, release.yml, docs.yml. JWT removido.</td></tr>
+          <tr><td>Fase 6 <span class="badge planned">→</span></td><td>v6.1–v6.2</td><td>Bean Validation nos DTOs, GlobalExceptionHandler padronizado</td></tr>
+          <tr><td>Fase 7 <span class="badge planned">→</span></td><td>v7.1–v7.6</td><td>Arquitetura hexagonal completa — domínio, ports, adapters, use cases</td></tr>
+          <tr><td>Fase 8 <span class="badge planned">→</span></td><td>v8.1–v8.3</td><td>RabbitMQ: produtor de eventos + consumer de pedidos + DLQ + Testcontainers</td></tr>
+          <tr><td>Fase 9 <span class="badge planned">→</span></td><td>v9.1–v9.3</td><td>Notificações: e-mail (Spring Mail), SMS, WhatsApp via consumers RabbitMQ</td></tr>
         </tbody>
       </table>
     </section>
