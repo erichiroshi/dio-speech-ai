@@ -26,15 +26,15 @@ jobs:
           java-version: '25'
           cache: gradle           # cache automático do Gradle via actions/setup-java
 
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
       - name: Cache SonarCloud packages
         uses: actions/cache@v5
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-
-      - name: Grant execute permission for Gradle
-        run: chmod +x gradlew
 
       - name: Build + Testes + Jacoco
         run: ./gradlew clean build --no-daemon --quiet
@@ -53,6 +53,12 @@ jobs:
           files: build/reports/jacoco/test/jacocoTestReport.xml
           fail_ci_if_error: true
           verbose: false
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}          
 
       - name: Upload relatório Jacoco (artifact)
         uses: actions/upload-artifact@v7

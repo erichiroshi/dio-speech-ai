@@ -8,6 +8,9 @@ WORKDIR /app
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY gradle/ gradle/
 
+# Garante permissão de execução para o wrapper
+RUN chmod +x gradlew
+
 # Baixa dependências em camada separada — só invalida quando build.gradle muda
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew dependencies --no-daemon --quiet
@@ -25,16 +28,14 @@ FROM eclipse-temurin:25-jre-jammy
 
 WORKDIR /app
 
-# curl para o HEALTHCHECK
+# Instala curl e cria usuário em uma única camada
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Usuário não-root para segurança
-RUN addgroup --system spring \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system spring \
     && adduser --system --ingroup spring spring
 
-# Copia apenas o JAR do stage de build
+# Copia apenas o JAR principal (evitando o -plain.jar)
 COPY --from=builder /app/build/libs/*.jar app.jar
 
 RUN chown -R spring:spring /app
@@ -43,10 +44,13 @@ USER spring
 
 EXPOSE 8080
 
+# Adicionado o parâmetro para facilitar a observabilidade e performance
 ENTRYPOINT ["java", \
             "--enable-preview", \
+            "-server", \
             "-XX:+UseContainerSupport", \
             "-XX:MaxRAMPercentage=75.0", \
+            "-Djava.security.egd=file:/dev/./urandom", \
             "-jar", "/app/app.jar"]
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
