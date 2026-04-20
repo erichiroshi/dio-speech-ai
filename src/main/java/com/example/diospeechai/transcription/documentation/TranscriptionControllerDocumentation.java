@@ -13,14 +13,17 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.example.diospeechai.transcription.dto.TranscriptionResponse;
 
+/**
+ * Contrato OpenAPI do TranscriptionController.
+ *
+ * <p>v5.1.0: @SecurityRequirement removido — JWT/Security fora da aplicação.
+ */
 @Tag(name = "Transcrição", description = "Transcrição de áudio para texto via Whisper")
 public interface TranscriptionControllerDocumentation {
-
 
     @Operation(
         summary = "Transcrever arquivo de áudio",
@@ -35,8 +38,7 @@ public interface TranscriptionControllerDocumentation {
                 
                 **Resiliência:** a chamada ao Whisper é protegida por CircuitBreaker + Retry.
                 Se o Whisper estiver indisponível, retorna 503.
-                """,
-        security = @SecurityRequirement(name = "bearerAuth")
+                """
     )
     @ApiResponses({
         @ApiResponse(
@@ -77,27 +79,12 @@ public interface TranscriptionControllerDocumentation {
                 mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                 examples = @ExampleObject(value = """
                         {
-                          "type": "https://api.diospeechai/errors/bad-request",
-                          "title": "Bad request",
+                          "type": "https://api.diospeechai/errors/transcription-exception",
+                          "title": "Transcription Exception",
                           "status": 400,
                           "detail": "Tipo de arquivo inválido: 'application/pdf'. Tipos aceitos: [audio/wav, audio/mpeg, audio/wave, audio/x-wav]",
                           "timestamp": "2026-04-11T12:00:00Z",
                           "requestId": "a3f2c1d0-7f3e-4b2a-9c1d-e8f5a6b7c8d9"
-                        }
-                        """)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Token JWT ausente ou inválido",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-                examples = @ExampleObject(value = """
-                        {
-                          "type": "https://api.diospeechai/errors/unauthorized",
-                          "title": "Unauthorized",
-                          "status": 401,
-                          "detail": "Token JWT ausente ou inválido"
                         }
                         """)
             )

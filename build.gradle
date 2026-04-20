@@ -2,10 +2,12 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.5'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
+	id 'org.sonarqube' version '7.2.3.7755'
 }
 
 group = 'com.example'
-version = '4.1.0'
+version = '5.1.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -28,7 +30,6 @@ ext{
 	logbackencoderVersion = '9.0'
 	aopVersion = '3.5.13'
 	resilience4jVersion = '2.4.0'
-	jwtVersion = '10.9'
    	testcontainersVersion = '2.0.4'
    	okhttpVersion = '5.3.2'
 	springdocVersion = '3.0.3'
@@ -39,6 +40,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	
 	// ── Observabilidade v2.1.0 ──────────────────────────────────────────────
 	implementation 'io.micrometer:micrometer-registry-prometheus'
@@ -63,11 +65,6 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-aop:${aopVersion}"
 	// Resilience4j com autoconfigure para Spring Boot 4
 	implementation "io.github.resilience4j:resilience4j-spring-boot4:${resilience4jVersion}"
-
-	// ── Segurança v3.4.0 ────────────────────────────────────────────────────
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	// Nimbus JOSE + JWT — parsing e validação de tokens JWT/JWS
-	implementation "com.nimbusds:nimbus-jose-jwt:${jwtVersion}"
 
 	// ── Documentação v4.1.0 ─────────────────────────────────────────────────
 	// SpringDoc OpenAPI — gera spec OAS 3.1 e serve Swagger UI
@@ -96,6 +93,87 @@ dependencies {
 	testImplementation 'com.squareup.okhttp3:mockwebserver'
 }
 
+// ── Jacoco v5.1.0 ────────────────────────────────────────────────────────────
+ 
+jacoco {
+	toolVersion = '0.8.14'
+}
+
+// Centralizar exclusões
+ext {
+    coverageExclusions = [
+				'**/config/**',          // beans de configuração Spring
+				'**/dto/**',             // records sem lógica
+				'**/exception/*Exception*', // classes de exceção simples
+				'**/*Application*',      // entry point
+				'**/documentation/**'    // interfaces de documentação Swagger
+    ]
+}
+ 
+// Gera relatório após os testes (XML para SonarCloud/Codecov + HTML para leitura)
+test.finalizedBy jacocoTestReport
+ 
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required  = true   // consumido pelo SonarCloud e Codecov
+		html.required = true   // leitura local em build/reports/jacoco/
+	}
+	// Exclui classes que não têm lógica testável
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: 
+				coverageExclusions
+			)
+		}))
+	}
+}
+ 
+// Bloqueia o build se cobertura cair abaixo do threshold
+// check (que roda antes do build final) depende desta verificação
+check.dependsOn jacocoTestCoverageVerification
+ 
+jacocoTestCoverageVerification {
+	// Aplica as mesmas exclusões do relatório
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: 
+				coverageExclusions
+			)
+		}))
+	}
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value   = 'COVEREDRATIO'
+				minimum = 0.70   // 70% de linhas cobertas — sobe gradualmente com os testes
+			}
+		}
+	}
+}
+ 
+// ── Sonar v5.1.0 ─────────────────────────────────────────────────────────────
+ 
+sonar {
+	properties {
+		property 'sonar.projectKey',  'erichiroshi_dio-speech-ai'
+		property 'sonar.projectName', 'dio-speech-ai'
+		property 'sonar.organization', 'erichiroshi'
+		property 'sonar.host.url',    'https://sonarcloud.io'
+		property 'sonar.java.coveragePlugin', 'jacoco'
+		property 'sonar.coverage.jacoco.xmlReportPaths',
+		         'build/reports/jacoco/test/jacocoTestReport.xml'
+		// Exclui os mesmos arquivos do Jacoco
+		property 'sonar.exclusions', coverageExclusions.join(',')
+		property 'sonar.sources',     'src/main/java'
+		property 'sonar.tests',       'src/test/java'
+	}
+}
+ 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Garante que Jacoco instrumente os testes
+	finalizedBy jacocoTestReport
 }
+ 

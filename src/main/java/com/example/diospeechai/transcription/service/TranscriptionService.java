@@ -110,10 +110,6 @@ public class TranscriptionService {
 			throw new TranscriptionException("Content-Type do arquivo não informado");
 		}
 
-		if (file.isEmpty()) {
-			throw new TranscriptionException("Arquivo vazio");
-		}
-
 		if (!ALLOWED_TYPES.contains(contentType.toLowerCase())) {
 			throw new TranscriptionException(
 					"Tipo de arquivo inválido: '%s'. Tipos aceitos: %s"

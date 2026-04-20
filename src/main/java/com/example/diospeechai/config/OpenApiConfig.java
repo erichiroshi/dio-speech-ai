@@ -1,18 +1,16 @@
 package com.example.diospeechai.config;
 
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
 
 /**
  * Configuração da especificação OpenAPI 3.1 via SpringDoc.
@@ -21,8 +19,6 @@ import java.util.List;
  * <ul>
  *   <li>Metadados da API (título, versão, descrição, contato, licença)</li>
  *   <li>Servidores (dev e prod)</li>
- *   <li>Esquema de segurança JWT Bearer — aparece no botão "Authorize" do Swagger UI</li>
- *   <li>Requisito de segurança global — todas as operações exigem o token por padrão</li>
  * </ul>
  *
  * <p>O Swagger UI fica disponível em:
@@ -34,8 +30,6 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
-
     @Value("${spring.application.name}")
     private String appName;
 
@@ -43,29 +37,15 @@ public class OpenApiConfig {
     OpenAPI openAPI() {
         return new OpenAPI()
                 .info(apiInfo())
-                .servers(servers())
-                .components(securityComponents())
-                // Requisito global: todas as operações exigem JWT por padrão
-                // Operações públicas sobrescrevem isso com @SecurityRequirements({})
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME));
+                .servers(servers());
     }
 
     private Info apiInfo() {
         return new Info()
-                .title("dio-speech-ai API")
-                .version("4.1.0")
+                .title(appName + "API")
+                .version("5.1.0")
                 .description("""
                         API REST de transcrição de áudio com Whisper via Speaches.
-                        
-                        ## Autenticação
-                        
-                        Obtenha um token JWT via `POST /auth/token` e clique em **Authorize** \
-                        para autenticar as requisições no Swagger UI.
-                        
-                        ```
-                        POST /auth/token
-                        { "username": "user", "password": "any" }
-                        ```
                         
                         ## Cache inteligente
                         
@@ -92,26 +72,7 @@ public class OpenApiConfig {
         return List.of(
                 new Server()
                         .url("http://localhost:8080")
-                        .description("Desenvolvimento local"),
-                new Server()
-                        .url("http://localhost:8080")
-                        .description("Produção (Docker Compose)")
+                        .description("Desenvolvimento local")
         );
-    }
-
-    private Components securityComponents() {
-        return new Components()
-                .addSecuritySchemes(SECURITY_SCHEME_NAME,
-                        new SecurityScheme()
-                                .name(SECURITY_SCHEME_NAME)
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .description("""
-                                        Token JWT obtido via `POST /auth/token`.
-                                        
-                                        Informe apenas o token, sem o prefixo "Bearer ".
-                                        O prefixo é adicionado automaticamente.
-                                        """));
     }
 }

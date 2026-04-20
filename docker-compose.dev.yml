@@ -49,7 +49,7 @@ services:
   # v2.3.0 — a app local (./gradlew bootRun) conecta via localhost:6379
   redis:
     container_name: redis
-    image: redis:8-alpine
+    image: redis:8.6.2-alpine
     restart: unless-stopped
 
     ports:
@@ -69,16 +69,16 @@ services:
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
+    user: "root"
     restart: unless-stopped
-    user: root
-    
+
     ports:
       - "9090:9090" # UI: http://localhost:9090
 
     volumes:
       - ./monitoring/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
     tmpfs: /prometheus
-    
+
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy" ]
       interval: 30s
@@ -92,7 +92,7 @@ services:
   # v2.6.0 — dashboards com provisioning automático (datasource + dashboard JSON)
   grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    image: 	grafana/grafana:latest
     restart: unless-stopped
 
     ports:
@@ -126,20 +126,20 @@ services:
   # usar ZIPKIN_BASE_URL=http://localhost:9411 passado via env da IDE/bootRun
   zipkin:
     container_name: zipkin
-    image: openzipkin/zipkin:3
+    image: openzipkin/zipkin:latest
     restart: unless-stopped
 
-    ports: 
+    ports:
       - "9411:9411"
 
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9411/health"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9411/health" ]
       interval: 20s
       timeout: 10s
       retries: 3
       start_period: 10s
 
-    networks: 
+    networks:
       - backend
 
 volumes:

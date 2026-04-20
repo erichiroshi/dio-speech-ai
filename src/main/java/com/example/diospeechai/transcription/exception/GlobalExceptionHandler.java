@@ -14,12 +14,11 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.example.diospeechai.security.JwtValidationException;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Tratamento centralizado de exceções.
+ * Tratamento centralizado de exceções — ProblemDetail (RFC 9457).
+ * Mensagens padronizadas em português.
  *
  * <p>v2.2.0: logs usam campos estruturados (sem concatenação de string)
  * para que o logstash-logback-encoder os serialize como campos separados no JSON.
@@ -32,6 +31,8 @@ public class GlobalExceptionHandler {
 
 	private static final String ERROR_BASE_URI = "https://api.diospeechai/errors/";
 
+	// ── Domínio de transcrição ────────────────────────────────────────────────
+	
 	@ExceptionHandler(TranscriptionException.class)
 	public ProblemDetail handleTranscription(TranscriptionException ex) {
 		
@@ -45,7 +46,6 @@ public class GlobalExceptionHandler {
 				);
 	}
 
-    // ── v3.1.0 ──────────────────────────────────────────────────────────────
     @ExceptionHandler(ServiceUnavailableException.class)
     public ProblemDetail handleServiceUnavailable(ServiceUnavailableException ex) {
     	
@@ -58,27 +58,16 @@ public class GlobalExceptionHandler {
         		"service-unavailable");
     }
 
-    // ── v3.4.0 ──────────────────────────────────────────────────────────────
-    @ExceptionHandler(JwtValidationException.class)
-    public ProblemDetail handleJwtValidation(JwtValidationException ex) {
-    	
-        log.warn("JWT validation failed | reason={}", ex.getMessage());
-        
-        return buildProblemDetail(
-        		HttpStatus.UNAUTHORIZED,
-        		"Unauthorized",
-        		ex.getMessage(), 
-        		"unauthorized");
-    }
-
+    // ── Validação de entrada ──────────────────────────────────────────────────────────────
+    
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
 
-		log.warn("Bad request | message={}", ex.getMessage());
+		log.warn("Requisição inválida | message={}", ex.getMessage());
 
 		return buildProblemDetail(
 				HttpStatus.BAD_REQUEST, 
-				"Bad request", 
+				"Requisição Inválida",
 				ex.getMessage(), 
 				"bad-request"
 				);
@@ -87,12 +76,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MissingServletRequestPartException.class)
 	public ProblemDetail handleMissingServletRequestPart(MissingServletRequestPartException ex) {
 		
-		log.warn("Bad request | message={}", ex.getMessage());
+		log.warn("Parte obrigatória ausente | message={}", ex.getMessage());
 		
 		return buildProblemDetail(
 				HttpStatus.BAD_REQUEST,
-				"Bad request",
-				"Required part 'file' is not present.",
+				"Requisição Inválida",
+				"O campo 'file' é obrigatório.",
 				"bad-request"
 				);
 	}
@@ -100,27 +89,28 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MultipartException.class)
 	public ProblemDetail handleMultipart(MultipartException ex) {
 		
-		log.warn("Bad request | message={}", ex.getMessage());
+		log.warn("Requisição multipart inválida | message={}", ex.getMessage());
 		
 		return buildProblemDetail(
 				HttpStatus.BAD_REQUEST,
-				"Bad request",
-				"Current request is not a multipart request.",
+				"Requisição Inválida",
+				"A requisição deve ser do tipo multipart/form-data.",
 				"bad-request"
 				);
 	}
 
+	// ── HTTP ──────────────────────────────────────────────────────────────────
+
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ProblemDetail handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
 		
-        log.warn("Method not supported | method={} | supported={}",
-                ex.getMethod(), ex.getSupportedHttpMethods());	
+		log.warn("Método não suportado | method={} | supported={}", ex.getMethod(), ex.getSupportedHttpMethods());	
         
 		return buildProblemDetail(
 				HttpStatus.METHOD_NOT_ALLOWED,
-				"Method Not Allowed",
-                "O método '%s' não é suportado. Métodos aceitos: %s"
-                	.formatted(ex.getMethod(), ex.getSupportedHttpMethods()),
+				"Método Não Permitido",
+				"O método '%s' não é suportado. Métodos aceitos: %s"
+					.formatted(ex.getMethod(), ex.getSupportedHttpMethods()),
 				"method-not-allowed"
                 );
 	}
@@ -128,26 +118,28 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ProblemDetail handleNotFound(NoResourceFoundException ex) {
 
-        log.warn("Resource not found | uri={}", ex.getMessage());
+		log.warn("Recurso não encontrado | uri={}", ex.getMessage());
 
 		return buildProblemDetail(
 				HttpStatus.NOT_FOUND,
-				"Not Found",
+				"Não Encontrado",
 				"O recurso solicitado não existe.",
 				"resource-not-found"
 				);
 	}
 
+	// ── Genérico ─────────────────────────────────────────────────────────────
+
 	@ExceptionHandler(Exception.class)
 	public ProblemDetail handleGeneric(Exception ex) {
 	
-	    log.error("Unexpected error | type={} | message={}",
-	            ex.getClass().getSimpleName(), ex.getMessage(), ex);
+		log.error("Erro inesperado | type={} | message={}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+
 	    
 		return buildProblemDetail(
 			    HttpStatus.INTERNAL_SERVER_ERROR,
-			    "Internal Server Error",
-	            "Erro inesperado. Consulte o suporte com o requestId.",
+			    "Erro Interno",
+			    "Erro inesperado. Consulte o suporte informando o requestId.",
 			    "internal-server-error"
 			);
 	}

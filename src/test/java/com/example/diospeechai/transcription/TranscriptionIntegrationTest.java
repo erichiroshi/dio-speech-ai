@@ -1,7 +1,5 @@
 package com.example.diospeechai.transcription;
 
-import java.util.List;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +18,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
-import com.example.diospeechai.security.JwtService;
 import com.redis.testcontainers.RedisContainer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -41,9 +38,7 @@ import okhttp3.mockwebserver.MockWebServer;
  *
  * <p>Cenários cobertos:
  * <ul>
- *   <li>JWT ausente → 401</li>
- *   <li>JWT inválido → 401</li>
- *   <li>Arquivo inválido → 400</li>
+ *   <li>Arquivo com Content-Type inválido → 400</li>
  *   <li>Cache miss → chama Speaches → 200 (cached ausente)</li>
  *   <li>Cache hit → não chama Speaches → 200 (cached=true)</li>
  *   <li>CircuitBreaker abre → fallback → 503</li>
@@ -89,7 +84,6 @@ class TranscriptionIntegrationTest {
     // ── Injeções ──────────────────────────────────────────────────────────────
 
     @Autowired MockMvc mockMvc;
-    @Autowired JwtService jwtService;
     @Autowired RedisTemplate<String, ?> redisTemplate;
     @Autowired CircuitBreakerRegistry circuitBreakerRegistry;
 
@@ -107,10 +101,6 @@ class TranscriptionIntegrationTest {
 	}
     
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private String validToken() {
-        return "Bearer " + jwtService.generateToken("testuser", List.of("ROLE_USER"));
-    }
 
     private MockMultipartFile audioFile() {
         return new MockMultipartFile(
@@ -131,21 +121,6 @@ class TranscriptionIntegrationTest {
 
     // ── Testes de autenticação ────────────────────────────────────────────────
 
-    @Test
-    @DisplayName("Deve retornar 401 quando Authorization header está ausente")
-    void shouldReturn401WhenNoToken() throws Exception {
-        mockMvc.perform(multipart("/api/transcriptions").file(audioFile()))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 401 quando token JWT é inválido")
-    void shouldReturn401WhenInvalidToken() throws Exception {
-        mockMvc.perform(multipart("/api/transcriptions")
-                        .file(audioFile())
-                        .header("Authorization", "Bearer token.invalido.aqui"))
-                .andExpect(status().isUnauthorized());
-    }
 
     // ── Testes de validação ───────────────────────────────────────────────────
 
@@ -156,44 +131,45 @@ class TranscriptionIntegrationTest {
                 "file", "doc.pdf", "application/pdf", "content".getBytes()
         );
 
-        mockMvc.perform(multipart("/api/transcriptions")
-                        .file(invalidFile)
-                        .header("Authorization", validToken()))
+        mockMvc.perform(multipart("/api/transcriptions").file(invalidFile))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Transcription Exception"));
+                .andExpect(jsonPath("$.title").value("Transcription Exception"))
+                .andExpect(jsonPath("$.status").value(400));
+    }
+    
+    @Test
+    @DisplayName("Deve retornar 400 quando arquivo está ausente")
+    void shouldReturn400WhenFileMissing() throws Exception {
+        mockMvc.perform(multipart("/api/transcriptions"))
+                .andExpect(status().isBadRequest());
     }
 
     // ── Testes de cache ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Cache miss: deve chamar Speaches e retornar transcrição (cached ausente)")
+    @DisplayName("Cache miss: deve chamar Speaches e retornar transcrição sem campo cached")
     void shouldTranscribeOnCacheMiss() throws Exception {
         stubSpeachesSuccess("audio transcrito com sucesso");
         
-        mockMvc.perform(multipart("/api/transcriptions")
-                        .file(audioFile())
-                        .header("Authorization", validToken()))
+        mockMvc.perform(multipart("/api/transcriptions").file(audioFile()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.text").value("audio transcrito com sucesso"))
+                .andExpect(jsonPath("$.fileSizeBytes").exists())
                 .andExpect(jsonPath("$.cached").doesNotExist());
     }
 
     @Test
-    @DisplayName("Cache hit: 2ª chamada com mesmo arquivo deve retornar cached=true sem chamar Speaches")
+    @DisplayName("Cache hit: 2ª chamada com mesmo arquivo retorna cached=true sem chamar Speaches")
     void shouldReturnCachedOnSecondCall() throws Exception {
         stubSpeachesSuccess("resposta do whisper");
         
         // 1ª chamada — miss
-        mockMvc.perform(multipart("/api/transcriptions")
-                        .file(audioFile())
-                        .header("Authorization", validToken()))
+        mockMvc.perform(multipart("/api/transcriptions").file(audioFile()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cached").doesNotExist());
 
         // 2ª chamada com mesmo arquivo — hit (Speaches não é chamado)
-        mockMvc.perform(multipart("/api/transcriptions")
-                        .file(audioFile())
-                        .header("Authorization", validToken()))
+        mockMvc.perform(multipart("/api/transcriptions").file(audioFile()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cached").value(true));
     }
@@ -211,19 +187,13 @@ class TranscriptionIntegrationTest {
         // Executar 4 chamadas para acumular falhas suficientes
         for (int i = 0; i < 4; i++) {
             MockMultipartFile uniqueFile = new MockMultipartFile(
-                    "file", "audio" + i + ".wav", "audio/wav",
-                    ("content-" + i).getBytes()
-            );
-            mockMvc.perform(multipart("/api/transcriptions")
-                    .file(uniqueFile)
-                    .header("Authorization", validToken()));
+                    "file", "audio" + i + ".wav", "audio/wav", ("content-" + i).getBytes());
+            mockMvc.perform(multipart("/api/transcriptions").file(uniqueFile));
         }
 
         // Próxima chamada deve atingir o circuito aberto → 503
-        stubSpeachesError(); // pode não ser consumido se CB estiver OPEN
         mockMvc.perform(multipart("/api/transcriptions")
-                        .file(new MockMultipartFile("file", "new.wav", "audio/wav", "new".getBytes()))
-                        .header("Authorization", validToken()))
+                        .file(new MockMultipartFile("file", "new.wav", "audio/wav", "new".getBytes())))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.title").value("Service Unavailable"));
     }
