@@ -39,38 +39,3 @@ jobs:
           docker tag  $IMAGE:latest $IMAGE:$VERSION
           docker push $IMAGE:$VERSION
           echo "Imagem tagueada: $IMAGE:$VERSION"
-
-      # Gera release notes automaticamente
-      - name: Criar GitHub Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
-        with:
-          generate_release_notes: true    # notas automáticas a partir dos commits
-          body: |
-            ## Docker Image
-
-            ```bash
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
-            ```
-
-            ## Docker Compose
-
-            ```yaml
-            services:
-              dio-speech-ai:
-                image: ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
-                ports:
-                  - "8080:8080"
-                environment:
-                  SPRING_PROFILES_ACTIVE: prod
-                  REDIS_HOST: redis
-                  WHISPER_BASE_URL: http://speaches:8000
-            ```
-
-            ## Docker Run
-
-            ```bash
-            docker run -d \
-              -p 8080:8080 \
-              -e SPRING_PROFILES_ACTIVE=prod \
-              ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
-            ```
