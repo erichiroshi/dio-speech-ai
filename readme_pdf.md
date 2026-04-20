@@ -3,7 +3,7 @@
 API REST de transcrição de áudio com Whisper via Speaches.
 
 Versão: 5.3.0 | Java 25 | Spring Boot 4.x
-
+ 
 ---
 
 ## Requisitos

@@ -347,6 +347,12 @@ docker exec -it redis redis-cli keys 'transcription:*'
 
 ---
 
+## Fluxo real de execução
+
+  <img width="100%" src="images/mermaid-diagram.png" alt="mermaid-diagram">
+
+---
+
 ## 📁 Estrutura do projeto
 
 ```
