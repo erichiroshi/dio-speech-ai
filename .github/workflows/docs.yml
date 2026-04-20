@@ -1,0 +1,65 @@
+name: Docs — PDF
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'readme_pdf.md'   # atualização de conteúdo na main
+    tags:
+      - 'v*'              # toda release (independente de arquivo alterado)
+
+jobs:
+
+  pdf:
+    name: Gerar PDF técnico
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write      # para anexar ao release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Pandoc + LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            texlive-xetex \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            texlive-lang-portuguese
+
+      - name: Gerar PDF
+        run: |
+          pandoc readme_pdf.md -o dio-speech-ai.pdf \
+            --pdf-engine=xelatex \
+            --highlight-style=tango \
+            --toc \
+            --toc-depth=2 \
+            -V mainfont="DejaVu Sans" \
+            -V monofont="DejaVu Sans Mono" \
+            -V fontsize=11pt \
+            -V geometry:margin=2cm \
+            -V linestretch=1.2 \
+            -V colorlinks=true \
+            -V linkcolor=blue \
+            -V urlcolor=blue \
+            -V toccolor=black \
+            -V papersize=a4 \
+            --variable=subparagraph
+
+      - name: Upload artifact (30 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dio-speech-ai-docs
+          path: dio-speech-ai.pdf
+          retention-days: 30
+
+      - name: Anexar PDF ao Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dio-speech-ai.pdf

@@ -8,6 +8,11 @@
   API de transcrição de áudio com Whisper e Spring Boot
 </p>
 
+![CI](https://github.com/erichiroshi/dio-speech-ai/actions/workflows/ci.yml/badge.svg)
+![PDF](https://github.com/erichiroshi/dio-speech-ai/actions/workflows/docker.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=erichiroshi_dio-speech-ai&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=erichiroshi_dio-speech-ai)
+[![codecov](https://codecov.io/gh/erichiroshi/dio-speech-ai/graph/badge.svg?token=HehyExb9gN)](https://codecov.io/gh/erichiroshi/dio-speech-ai)
+
 <p align="center">
   <img src="https://img.shields.io/badge/Java-25-red?style=flat-square&logo=openjdk" alt="Java 25">
   <img src="https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4">
@@ -17,11 +22,12 @@
   <img src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white" alt="Grafana">
   <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis">
   <img src="https://img.shields.io/badge/Resilience4j-informational?style=flat-square" alt="Resilience4j">
-  <img src="https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="JWT">
   <img src="https://img.shields.io/badge/OpenAPI-3.1-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI 3.1">
+  <img src="https://img.shields.io/badge/Jacoco-70%25-brightgreen?style=flat-square" alt="Jacoco">
+  <img src="https://img.shields.io/badge/SonarCloud-passing-4E9BCD?style=flat-square&logo=sonarcloud&logoColor=white" alt="SonarCloud">
+  <img src="https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="MIT License">
 </p>
-
 ---
 
 ## 📋 Sobre o projeto
@@ -54,7 +60,7 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 
 ## 🗺️ Roadmap
 
-**[Ver Roadmap completo — Fases 1, 2, 3 e 4](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
+**[Ver Roadmap completo — Fases 1 a 9](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
  
 | Fase | Versões | Status |
 |---|---|---|
@@ -62,6 +68,11 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Fase 2 — Observabilidade + Cache | v2.1.0 → v2.7.0 | ✅ Concluída |
 | Fase 3 — Resiliência + Segurança | v3.1.0 → v3.5.0 | ✅ Concluída |
 | Fase 4 — Documentação | v4.1.0 | ✅ Concluída |
+| Fase 5 — CI/CD | v5.1.0 → v5.3.0 | 🔄 Em andamento |
+| Fase 6 — Bean Validation | v6.x | 📋 Planejado |
+| Fase 7 — Arquitetura Hexagonal | v7.x | 📋 Planejado |
+| Fase 8 — RabbitMQ | v8.x | 📋 Planejado |
+| Fase 9 — Notificações | v9.x | 📋 Planejado |
  
 ---
 
@@ -93,12 +104,14 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Prometheus | Latest | Scraping via `/actuator/prometheus` |
 | Grafana | Latest | Dashboards com provisioning automático |
 | Logback + logstash-encoder | 9.0 | Logs estruturados JSON |
-| Zipkin + OpenTelemetry | — | Tracing distribuído |
-| Redis | 8-alpine | Cache de transcrições por SHA-256 |
+| Zipkin + OpenTelemetry | Latest | Tracing distribuído |
+| Redis | 8.6.2-alpine | Cache de transcrições por SHA-256 |
 | Resilience4j | 2.4.0 | CircuitBreaker + Retry com backoff |
-| Spring Security + Nimbus JWT | 10.9 | Autenticação stateless HS256 |
 | Testcontainers | 2.0.4 | Testes de integração com Redis real |
 | SpringDoc OpenAPI | 3.0.3 | Spec OAS 3.1 + Swagger UI |
+| Jacoco | 0.8.14 | Cobertura de testes (threshold 70%) |
+| SonarCloud | 7.2.3.7755 | Análise estática + Quality Gate |
+| GitHub Actions | — | CI/CD: testes, Docker, releases, PDF |
 
 ---
 
@@ -107,11 +120,9 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 ```
 Cliente
   │  POST /api/transcriptions
-  │  Authorization: Bearer <token>
   ▼
 Spring Boot API  :8080
   │
-  ├── SecurityFilterChain → JwtAuthFilter → valida token
   ├── MdcLoggingFilter    → requestId, httpMethod, requestUri
   │
   ├── TranscriptionService
@@ -165,7 +176,7 @@ cd dio-speech-ai
 ### Modo Desenvolvimento
 
 ```bash
-# 1. Infraestrutura (Speaches + Redis + Prometheus + Grafana + Zipkin)
+# 1. Infraestrutura (Speaches + Redis + Prometheus + Grafana + Zipkin + Sonarqube)
 docker compose -f docker-compose.dev.yml up -d
 
 # 2. Aplicação
@@ -180,6 +191,7 @@ Serviços disponíveis:
 - Zipkin: http://localhost:9411
 - Redis: http://localhost:6379
 - Speaches: http://localhost:8000
+- Sonarqube: http://localhost:9000
 
 ### Modo Produção
 
@@ -217,15 +229,6 @@ Com a aplicação em execução, acesse a documentação interativa:
 ```
 http://localhost:8080/swagger-ui.html
 ```
- 
-### Como autenticar no Swagger UI
- 
-1. Expanda **Autenticação → POST /auth/token**
-2. Clique em **Try it out**, insira `{"username":"user","password":"any"}` e execute
-3. Copie o valor do campo `token` na resposta
-4. Clique em **Authorize 🔒** (botão no topo direito)
-5. Cole o token no campo `bearerAuth` e confirme
-6. Todas as requisições seguintes incluem o header automaticamente
 
 ### Endpoints da documentação
  
@@ -240,8 +243,6 @@ http://localhost:8080/swagger-ui.html
 ## 📡 Endpoint de transcrição
 
 ### `POST /api/transcriptions`
-
-> **Requer autenticação JWT** — ver [seção abaixo](#-autenticação-jwt).
 
 **Request** — `multipart/form-data`
 
@@ -270,48 +271,6 @@ http://localhost:8080/swagger-ui.html
   "detail": "Serviço de transcrição temporariamente indisponível.",
   "requestId": "a3f2c1d0-..."
 }
-```
-
----
-
-## 🔐 Autenticação JWT
-
-### Obter token
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"user","password":"any"}' | jq -r .token)
-```
-
-### Usar token
-
-```bash
-curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@audio.wav;type=audio/wav" | jq .
-```
-
-### Endpoints públicos
-
-| Endpoint | Motivo |
-|---|---|
-| `GET /actuator/health` | Healthcheck Docker |
-| `GET /actuator/prometheus` | Scraping Prometheus |
-| `GET /swagger-ui.html` | Documentação interativa |
-| `GET /v3/api-docs/**` | Spec OpenAPI |
-| `POST /auth/token` | Obter token JWT |
-
-### Variáveis JWT
-
-| Variável | Padrão | Descrição |
-|---|---|---|
-| `JWT_SECRET` | (inseguro) | Segredo HMAC-SHA256 — **obrigatório em prod** |
-| `JWT_EXPIRATION_HOURS` | `8` | Expiração em horas |
-
-```bash
-# Gerar secret seguro para produção
-openssl rand -hex 32
 ```
 
 ---
@@ -356,19 +315,12 @@ Acesse http://localhost:9411 — todos os spans de cada requisição, com `trace
 ## 🧪 Testando a API
 
 ```bash
-# Obter token
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"user","password":"any"}' | jq -r .token)
-
 # Transcrever (cache miss)
 curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
   -F "file=@audio.wav;type=audio/wav" | jq .
 
 # Transcrever novamente (cache hit — mesmo arquivo)
 curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
   -F "file=@audio.wav;type=audio/wav" | jq .cached
 # → true
 
@@ -392,8 +344,6 @@ docker exec -it redis redis-cli keys 'transcription:*'
 | `CACHE_TTL_HOURS` | `24` | TTL das transcrições em cache |
 | `ZIPKIN_BASE_URL` | `http://localhost:9411` | URL do Zipkin |
 | `TRACING_SAMPLING` | `1.0` | Taxa de sampling (0.0–1.0) |
-| `JWT_SECRET` | (inseguro) | Secret HMAC-SHA256 — **obrigatório em prod** |
-| `JWT_EXPIRATION_HOURS` | `8` | Expiração do token |
 
 ---
 
@@ -409,18 +359,6 @@ dio-speech-ai/
 │   │   │   │   ├── RedisConfig.java            ← v2.3.0
 │   │   │   │   └── MdcLoggingFilter.java       ← v2.2.0
 │   │   │   │   └── OpenApiConfig.java          ← v4.1.0
-│   │   │   ├── security/                       ← v3.4.0
-│   │   │   │   ├── documentation/
-|   │   │   │   │   └── AuthControllerDocumentation.java  ← v4.1.0
-│   │   │   │   ├── dto/
-|   │   │   │   │   ├── TokenRequest.java   ← v4.1.0
-|   │   │   │   │   └── TokenResponse.java  ← v4.1.0
-│   │   │   │   ├── JwtProperties.java
-│   │   │   │   ├── JwtService.java
-│   │   │   │   ├── JwtValidationException.java
-│   │   │   │   ├── JwtAuthFilter.java
-│   │   │   │   ├── SecurityConfig.java
-│   │   │   │   └── AuthController.java
 │   │   │   └── transcription/
 │   │   │       ├── documentation/
 |   │   │       │   └── TranscriptionControllerDocumentation.java  ← v4.1.0
@@ -448,6 +386,13 @@ dio-speech-ai/
 │       └── java/com/example/diospeechai/
 │           └── transcription/
 │               └── TranscriptionIntegrationTest.java  ← v3.5.0
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                                   ← v5.2.0 testes + qualidade
+│       ├── docker.yml                               ← v5.2.0 build + push
+│       ├── release.yml                              ← v5.3.0 re-tag + GitHub Release
+│       └── docs.yml                                 ← v5.3.0 gera PDF técnico
+├── readme_pdf.md                                    ← v5.3.0 documento técnico para PDF
 ├── about/                                           ← docs de cada fase
 │   ├── projeto.md
 │   ├── v2.1.0.md … v3.5.0.md
@@ -473,7 +418,7 @@ dio-speech-ai/
 │           └── transcription_cache_total.json
 ├── docker/Dockerfile
 ├── docker-compose.yml              ← prod (6 serviços)
-├── docker-compose.dev.yml          ← dev  (5 serviços)
+├── docker-compose.dev.yml          ← dev  (6 serviços)
 ├── audio.wav
 ├── build.gradle
 ├── VERSIONING.md
@@ -495,24 +440,6 @@ docker compose logs speaches && docker compose ps
 # Ver estado do CB
 curl http://localhost:8080/actuator/health | jq .components.circuitBreakers
 # Aguardar waitDurationInOpenState (30s) para voltar ao estado HALF_OPEN
-```
-
-**`401 Unauthorized`**
-```bash
-# Obter novo token
-curl -s -X POST http://localhost:8080/auth/token \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"user","password":"any"}' | jq .token
-```
- 
-**Swagger UI retorna 401**
- 
-Verifique se as rotas estão liberadas no `SecurityConfig`:
-```java
-.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
-.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
-.requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
-**Prometheus não coleta métricas (modo dev)**
 ```
 
 **Prometheus não coleta métricas (modo dev)**

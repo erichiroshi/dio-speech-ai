@@ -65,46 +65,7 @@
       </div>
     </section>
 
-    <!-- ── AUTENTICAÇÃO ──────────────────────────────────────────────────── -->
-    <section class="card">
-      <h2>Autenticação JWT</h2>
-      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
-        Todos os endpoints (exceto os públicos) exigem um token JWT no header
-        <code>Authorization: Bearer &lt;token&gt;</code>.
-      </p>
-
-      <h3>1. Obter token</h3>
-      <pre>
-POST /auth/token
-Content-Type: application/json
-
-{
-  "username": "user",
-  "password": "any"
-}
-
-# Resposta
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0..."
-}</pre>
-
-      <h3>2. Usar o token</h3>
-      <pre>
-curl -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..." \
-  -F "file=@audio.wav;type=audio/wav"</pre>
-
-      <h3>No Swagger UI</h3>
-      <ol style="color:var(--muted); font-size:13px; padding-left:20px; line-height:2;">
-        <li>Execute <code>POST /auth/token</code> para obter o token</li>
-        <li>Copie o valor do campo <code>token</code></li>
-        <li>Clique no botão <strong>Authorize 🔒</strong> no topo da página</li>
-        <li>Cole o token no campo <code>bearerAuth</code> e clique em <strong>Authorize</strong></li>
-        <li>Todas as requisições seguintes incluirão o token automaticamente</li>
-      </ol>
-    </section>
-
-    <!-- ── ENDPOINTS ─────────────────────────────────────────────────────── -->
+       <!-- ── ENDPOINTS ─────────────────────────────────────────────────────── -->
     <section class="card">
       <h2>Endpoints</h2>
       <table>
@@ -117,12 +78,6 @@ curl -X POST http://localhost:8080/api/transcriptions \
             <td><span class="lock">🔒 ROLE_USER</span></td>
           </tr>
           <tr>
-            <td><span class="badge post">POST</span></td>
-            <td>/auth/token</td>
-            <td>Gerar token JWT (apenas dev)</td>
-            <td><span class="open">🔓 público</span></td>
-          </tr>
-          <tr>
             <td><span class="badge get">GET</span></td>
             <td>/actuator/health</td>
             <td>Status da aplicação + CircuitBreaker</td>
@@ -133,12 +88,6 @@ curl -X POST http://localhost:8080/api/transcriptions \
             <td>/actuator/prometheus</td>
             <td>Métricas no formato Prometheus</td>
             <td><span class="open">🔓 público</span></td>
-          </tr>
-          <tr>
-            <td><span class="badge get">GET</span></td>
-            <td>/actuator/metrics</td>
-            <td>Lista de métricas disponíveis</td>
-            <td><span class="lock">🔒 autenticado</span></td>
           </tr>
           <tr>
             <td><span class="badge get">GET</span></td>
@@ -188,11 +137,6 @@ curl -X POST http://localhost:8080/api/transcriptions \
             <td>ProblemDetail com detalhe do erro e <code>requestId</code></td>
           </tr>
           <tr>
-            <td><span class="status s401">401</span></td>
-            <td>Token ausente/inválido</td>
-            <td>ProblemDetail com <code>"detail": "Token JWT ausente ou inválido"</code></td>
-          </tr>
-          <tr>
             <td><span class="status s503">503</span></td>
             <td>Whisper indisponível</td>
             <td>ProblemDetail — CircuitBreaker aberto. Tente novamente em ~30s.</td>
@@ -227,8 +171,8 @@ docker exec -it redis redis-cli keys 'transcription:*'</pre>
       </p>
       <pre>
 {
-  "type": "https://api.diospeechai/errors/bad-request",
-  "title": "Bad request",
+  "type": "https://api.diospeechai/errors/transcription-exception",
+  "title": "Transcription Exception",
   "status": 400,
   "detail": "Tipo de arquivo inválido: 'application/pdf'.",
   "timestamp": "2026-04-11T12:00:00Z",

@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'           # dispara em qualquer tag v1.0.0, v5.3.0, etc.
+
+jobs:
+
+  release:
+    name: Release — re-tag imagem + GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write    # necessário para criar GitHub Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Extrair versão da tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Login Docker Hub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Re-tag imagem (latest → versão específica)
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          # Reutiliza a imagem já buildada pelo docker.yml — não rebuilda
+          docker pull $IMAGE:latest
+          docker tag  $IMAGE:latest $IMAGE:$VERSION
+          docker push $IMAGE:$VERSION
+          echo "Imagem tagueada: $IMAGE:$VERSION"
+
+      # Gera release notes automaticamente
+      - name: Criar GitHub Release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
+        with:
+          generate_release_notes: true    # notas automáticas a partir dos commits
+          body: |
+            ## Docker Image
+
+            ```bash
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
+            ```
+
+            ## Docker Compose
+
+            ```yaml
+            services:
+              dio-speech-ai:
+                image: ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
+                ports:
+                  - "8080:8080"
+                environment:
+                  SPRING_PROFILES_ACTIVE: prod
+                  REDIS_HOST: redis
+                  WHISPER_BASE_URL: http://speaches:8000
+            ```
+
+            ## Docker Run
+
+            ```bash
+            docker run -d \
+              -p 8080:8080 \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai:${{ steps.version.outputs.VERSION }}
+            ```
