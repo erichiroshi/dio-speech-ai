@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]        # qualquer branch
+  pull_request:
+    branches: [ "main" ]      # PR para main
+
+jobs:
+
+  test:
+    name: Testes + Cobertura + Qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0          # SonarCloud precisa do histórico completo para analisar deltas
+
+      - name: Setup JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle           # cache automático do Gradle via actions/setup-java
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
+      - name: Build + Testes + Jacoco
+        run: ./gradlew clean build --no-daemon --quiet
+        # clean build inclui: compile → test → jacocoTestReport → jacocoTestCoverageVerification
+        # Falha se cobertura < 70% (check.dependsOn jacocoTestCoverageVerification)
+
+      - name: SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar --no-daemon --info
+
+      - name: Upload cobertura para Codecov
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/reports/jacoco/test/jacocoTestReport.xml
+          fail_ci_if_error: true
+          verbose: false
+
+      - name: Upload relatório Jacoco (artifact)
+        uses: actions/upload-artifact@v7
+        if: always()              # sobe mesmo se os testes falharem — útil para debug
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/
+          retention-days: 14

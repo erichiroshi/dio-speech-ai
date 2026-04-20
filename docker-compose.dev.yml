@@ -142,8 +142,39 @@ services:
     networks:
       - backend
 
+  # ── SonarQube ───────────────────────────────────────────────────────────────────
+  sonarqube:
+    container_name: sonarqube
+    image: sonarqube:latest
+    restart: unless-stopped
+
+    ports:
+      - "9000:9000" # UI: http://localhost:9000  (admin/admin no primeiro acesso)
+
+    # Mapeando os diretórios para volumes com nomes fixos
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_temp:/opt/sonarqube/temp
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000/api/system/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    networks:
+      - backend
+
 volumes:
   hf-hub-cache:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  sonarqube_conf:
+  sonarqube_temp:
 
 networks:
   backend:

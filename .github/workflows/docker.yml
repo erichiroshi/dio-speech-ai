@@ -1,0 +1,77 @@
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [ "**" ]        # qualquer branch
+  pull_request:
+    branches: [ "main" ]      # PR para main
+  workflow_dispatch:           # acionamento manual
+
+env:
+  REGISTRY:   docker.io
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/dio-speech-ai
+
+jobs:
+
+  docker:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
+        # Habilita BuildKit com suporte a --mount=type=cache e builds paralelos
+
+      # Login apenas se for push (não PR)
+      - name: Login Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Extrai metadata para tags inteligentes
+      - name: Extrair metadados (tags)
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            # SHA curto — sempre gerado (rastreabilidade por commit)
+            type=sha,format=short
+            # Nome do branch (ex: feature-x → feature-x)
+            type=ref,event=branch
+            # Número do PR em pull_request (ex: pr-42) — sem push
+            type=ref,event=pr
+            # latest apenas na main
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      # Build com cache de registry (MUITO MAIS RÁPIDO!)
+      - name: Build and push Docker image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}   # não pusha em PR
+          load: ${{ github.event_name == 'pull_request' }}   # carrega localmente em PR (para Trivy)
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Cache de camadas via GitHub Actions Cache (type=gha) — muito mais rápido
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      # Scan de vulnerabilidades (RECOMENDADO)
+      - name: Trivy — scan de vulnerabilidades
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: '0'          # avisa, não falha CI (vulnerabilidades em deps transitivas)
+          severity: CRITICAL,HIGH
