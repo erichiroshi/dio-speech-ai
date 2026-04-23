@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '7.1.0'
+version = '7.2.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -37,6 +37,7 @@ ext{
 	coverageExclusions = [
 	'**/config/**',
 	'**/dto/**',
+	'**/application/**',
 	'**/exception/*Exception*',
 	'**/*Application*',
 	'**/documentation/**',

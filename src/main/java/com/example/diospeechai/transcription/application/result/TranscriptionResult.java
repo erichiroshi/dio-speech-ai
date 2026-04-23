@@ -1,50 +1,30 @@
 package com.example.diospeechai.transcription.application.result;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /**
- * Resposta da API de transcrição.
+ * Objeto de saída do caso de uso {@code TranscribeAudioUseCase}.
  *
- * <p>v2.4.0: campo {@code cached} adicionado. Quando {@code true}, indica que a
- * transcrição foi retornada do cache Redis (nenhuma chamada ao Whisper foi feita).
- * Quando ausente na resposta JSON, a transcrição foi processada agora.
+ * <p>Carrega o resultado sem acoplamento com {@code ResponseEntity}
+ * (HTTP) nem com eventos RabbitMQ. O adapter converte este resultado
+ * para sua representação específica de saída.
  *
- * <p>{@code @JsonInclude(NON_NULL)} evita que {@code "cached": null} apareça nas
- * respostas de cache miss — o campo só aparece quando for {@code true}.
+ * <p>{@code cached} indica se o resultado veio do Redis (true) ou
+ * foi processado agora pelo Whisper (false).
+ *
+ * @param text          texto transcrito
+ * @param fileSizeBytes tamanho do arquivo original em bytes
+ * @param cached        true se servido do cache, false se processado agora
  */
-@Schema(description = "Resultado da transcrição de áudio")
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record TranscriptionResult(
-
-        @Schema(
-            description = "Texto transcrito pelo Whisper",
-            example = "testando o áudio para a gravação e teste da API"
-        )
         String text,
-
-        @Schema(
-            description = "Tamanho do arquivo de áudio enviado, em bytes",
-            example = "461842"
-        )
-        Long fileSizeBytes,
-
-        @Schema(
-            description = "Presente e `true` quando a resposta foi servida do cache Redis. "
-                        + "Ausente quando o Whisper processou o áudio nesta requisição.",
-            example = "true",
-            nullable = true
-        )
-        Boolean cached
-
+        long fileSizeBytes,
+        boolean cached
 ) {
-    /** Construtor de conveniência para respostas sem cache (miss ou primeira chamada). */
-    public TranscriptionResult(String text, Long fileSizeBytes) {
-        this(text, fileSizeBytes, null);
+    /** Construtor de conveniência para resultado de cache miss (processado pelo Whisper). */
+    public TranscriptionResult(String text, long fileSizeBytes) {
+        this(text, fileSizeBytes, false);
     }
 
-    /** Retorna uma cópia desta resposta marcada como vinda do cache. */
+    /** Retorna uma cópia marcada como vinda do cache. */
     public TranscriptionResult asCached() {
         return new TranscriptionResult(text, fileSizeBytes, true);
     }
