@@ -20,6 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
 import com.example.diospeechai.transcription.application.TranscribeAudioUseCase;
+import com.example.diospeechai.transcription.infrastructure.cache.RedisTranscriptionCacheAdapter;
 import com.redis.testcontainers.RedisContainer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -54,6 +55,8 @@ class TranscriptionIntegrationTest {
 
 	@MockitoBean
 	private TranscribeAudioUseCase transcribeAudioUseCase;
+	@MockitoBean
+	private RedisTranscriptionCacheAdapter redisTranscriptionCacheAdapter;
 	
     // ── Testcontainers ────────────────────────────────────────────────────────
 
