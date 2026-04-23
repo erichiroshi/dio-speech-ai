@@ -12,12 +12,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
+import com.example.diospeechai.transcription.application.TranscribeAudioUseCase;
 import com.redis.testcontainers.RedisContainer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -50,6 +52,9 @@ import okhttp3.mockwebserver.MockWebServer;
 @DisplayName("Transcription Integration Tests")
 class TranscriptionIntegrationTest {
 
+	@MockitoBean
+	private TranscribeAudioUseCase transcribeAudioUseCase;
+	
     // ── Testcontainers ────────────────────────────────────────────────────────
 
     @Container
