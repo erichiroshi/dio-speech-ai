@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -59,12 +60,19 @@ public class WhisperAdapter implements SpeechToTextPort {
     @Retry(name = "whisper", fallbackMethod = "fallback")
     @CircuitBreaker(name = "whisper", fallbackMethod = "fallback")
     public String transcribe(byte[] audioBytes) {
-
+    	
+    	ByteArrayResource resource = new ByteArrayResource(audioBytes) {
+    	    @Override
+    	    public String getFilename() {
+    	        return "audio.wav"; // ou .mp3, etc
+    	    }
+    	};
+    	
         MDC.put("whisperModel", properties.model());
         log.debug("Chamando Speaches | model={} | bytes={}", properties.model(), audioBytes.length);
 
         MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part("file",  audioBytes);
+        body.part("file",  resource);
         body.part("model", properties.model());
 
         try {

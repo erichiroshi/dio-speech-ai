@@ -45,6 +45,7 @@ public class TranscriptionController implements TranscriptionControllerDocumenta
         TranscribeCommand command = new TranscribeCommand(
                 audioBytes,
                 file.getOriginalFilename(),
+                file.getContentType(),
                 file.getSize()
         );
 

@@ -23,8 +23,8 @@ public class NoOpTranscriptionEventAdapter implements TranscriptionEventPort {
 
     @Override
     public void publish(Transcription transcription) {
-        log.debug("Evento de transcrição (no-op) | id={} | hash={} | texto='{}'",
-                transcription.id(), transcription.audioHash(), transcription.text());
+        log.debug("Evento de transcrição (no-op) | id={} | hash={} | texto='{}' | createdAt={}",
+                transcription.id(), transcription.audioHash(), transcription.text(), transcription.createdAt());
         // Fase 8: substituir por publicação real no RabbitMQ
     }
 }

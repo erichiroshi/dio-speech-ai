@@ -49,13 +49,14 @@ class TranscribeAudioUseCaseTest {
 
     private static final byte[] AUDIO_BYTES = "fake-audio-content".getBytes();
     private static final String FILENAME    = "audio.wav";
+    private static final String CONTENT_TYPE    = "audio/wav";
     private static final long   SIZE        = AUDIO_BYTES.length;
 
     private TranscribeCommand command;
 
 	@BeforeEach
     void setUp() {
-        command = new TranscribeCommand(AUDIO_BYTES, FILENAME, SIZE);
+        command = new TranscribeCommand(AUDIO_BYTES, FILENAME, CONTENT_TYPE, SIZE);
 
         // TranscriptionMetrics.recordWhisperCall() precisa executar o supplier
     }
@@ -117,7 +118,7 @@ class TranscribeAudioUseCaseTest {
     @DisplayName("Dois comandos com mesmo conteúdo devem gerar o mesmo hash de cache")
     void shouldProduceSameHashForSameContent() {
         // Arrange
-        var command2 = new TranscribeCommand(AUDIO_BYTES, "outro-nome.wav", SIZE);
+        var command2 = new TranscribeCommand(AUDIO_BYTES, "outro-nome.wav", CONTENT_TYPE, SIZE);
         
         when(metrics.recordWhisperCall(any(Supplier.class)))
         .thenAnswer(inv -> inv.<Supplier<?>>getArgument(0).get());

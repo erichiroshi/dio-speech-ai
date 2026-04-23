@@ -4,6 +4,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import com.example.diospeechai.transcription.domain.port.in.TranscribeAudioPort;
 import com.example.diospeechai.transcription.domain.port.out.SpeechToTextPort;
 import com.example.diospeechai.transcription.domain.port.out.TranscriptionCachePort;
 import com.example.diospeechai.transcription.domain.port.out.TranscriptionEventPort;
+import com.example.diospeechai.transcription.exception.TranscriptionException;
 import com.example.diospeechai.transcription.metrics.TranscriptionMetrics;
 
 import lombok.RequiredArgsConstructor;
@@ -45,10 +47,19 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 	private final TranscriptionCachePort cachePort;
 	private final TranscriptionEventPort eventPort;
 	private final TranscriptionMetrics metrics;
+	
+    private static final Set<String> ALLOWED_TYPES = Set.of(
+    	    "audio/wav",
+    	    "audio/mpeg",
+    	    "audio/wave",
+            "audio/x-wav"
+    	);
 
 	@Override
 	public TranscriptionResult transcribe(TranscribeCommand command) {
 
+        validate(command);
+		
 		String audioHash = sha256(command.audioBytes());
 
 		MDC.put("fileName", command.filename());
@@ -94,6 +105,27 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 			MDC.remove("whisperModel");
 		}
 	}
+	
+	// ── Validação ─────────────────────────────────────────────────────────────
+
+		private void validate(TranscribeCommand file) {
+
+			if (file == null) {
+				throw new TranscriptionException("Arquivo vazio ou ausente");
+			}
+			
+			String contentType = file.contentType();
+
+			if (contentType == null) {
+				throw new TranscriptionException("Content-Type do arquivo não informado");
+			}
+
+			if (!ALLOWED_TYPES.contains(contentType.toLowerCase())) {
+				throw new TranscriptionException(
+						"Tipo de arquivo inválido: '%s'. Tipos aceitos: %s"
+							.formatted(contentType, ALLOWED_TYPES));
+			}
+		}
 
 	// ── Helper ────────────────────────────────────────────────────────────────
 

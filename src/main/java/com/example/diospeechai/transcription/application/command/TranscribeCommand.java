@@ -16,5 +16,6 @@ package com.example.diospeechai.transcription.application.command;
 public record TranscribeCommand(
         byte[] audioBytes,
         String filename,
+        String contentType,
         long fileSizeBytes
 ) {}
