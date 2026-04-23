@@ -53,7 +53,7 @@ class TranscriptionIntegrationTest {
     // ── Testcontainers ────────────────────────────────────────────────────────
 
     @Container
-    static RedisContainer redis = new RedisContainer("redis:7-alpine");
+    static RedisContainer redis = new RedisContainer("redis:8.6.2-alpine");
 
     static MockWebServer mockSpeaches = new MockWebServer();
 

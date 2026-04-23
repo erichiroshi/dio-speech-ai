@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '5.3.0'
+version = '7.1.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -33,6 +33,15 @@ ext{
    	testcontainersVersion = '2.0.4'
    	okhttpVersion = '5.3.2'
 	springdocVersion = '3.0.3'
+	
+	coverageExclusions = [
+	'**/config/**',
+	'**/dto/**',
+	'**/exception/*Exception*',
+	'**/*Application*',
+	'**/documentation/**',
+	'**/messaging/NoOp*'      // placeholder sem lógica testável
+	]
 }
 
 dependencies {
@@ -99,17 +108,6 @@ jacoco {
 	toolVersion = '0.8.14'
 }
 
-// Centralizar exclusões
-ext {
-    coverageExclusions = [
-				'**/config/**',          // beans de configuração Spring
-				'**/dto/**',             // records sem lógica
-				'**/exception/*Exception*', // classes de exceção simples
-				'**/*Application*',      // entry point
-				'**/documentation/**'    // interfaces de documentação Swagger
-    ]
-}
- 
 // Gera relatório após os testes (XML para SonarCloud/Codecov + HTML para leitura)
 test.finalizedBy jacocoTestReport
  
