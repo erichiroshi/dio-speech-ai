@@ -1,4 +1,4 @@
-package com.example.diospeechai.transcription.exception;
+package com.example.diospeechai.shared.exception;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.example.diospeechai.transcription.exception.ServiceUnavailableException;
+import com.example.diospeechai.transcription.exception.TranscriptionException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,31 +36,32 @@ public class GlobalExceptionHandler {
 
 	// ── Domínio de transcrição ────────────────────────────────────────────────
 	
-	@ExceptionHandler(TranscriptionException.class)
-	public ProblemDetail handleTranscription(TranscriptionException ex) {
-		
-		log.warn("Transcription Error | message={}", ex.getMessage());
-		
-		return buildProblemDetail(
-				HttpStatus.BAD_REQUEST,
-				"Transcription Exception",
-				ex.getMessage(),
-				"transcription-exception"
-				);
-	}
-
+    @ExceptionHandler(TranscriptionException.class)
+    public ProblemDetail handleTranscription(TranscriptionException ex) {
+    	
+        log.warn("Erro de transcrição | message={}", ex.getMessage());
+        
+        return buildProblemDetail(
+        		HttpStatus.BAD_REQUEST, 
+        		"Transcription Exception", 
+        		ex.getMessage(), 
+        		"transcription-exception"
+        		);
+    }
+	
     @ExceptionHandler(ServiceUnavailableException.class)
     public ProblemDetail handleServiceUnavailable(ServiceUnavailableException ex) {
     	
-        log.warn("Service unavailable | message={}", ex.getMessage());
+        log.warn("Serviço indisponível | message={}", ex.getMessage());
         
         return buildProblemDetail(
         		HttpStatus.SERVICE_UNAVAILABLE,
-        		"Service Unavailable",
+        		"Service Unavailable", 
         		ex.getMessage(), 
-        		"service-unavailable");
+        		"service-unavailable"
+        		);
     }
-
+    
     // ── Validação de entrada ──────────────────────────────────────────────────────────────
     
 	@ExceptionHandler(IllegalArgumentException.class)

@@ -1,4 +1,4 @@
-package com.example.diospeechai.config;
+package com.example.diospeechai.shared.config;
 
 import java.io.IOException;
 import java.util.UUID;

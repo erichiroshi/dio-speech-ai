@@ -1,4 +1,4 @@
-package com.example.diospeechai.config;
+package com.example.diospeechai.shared.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
