@@ -52,6 +52,7 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 - [📊 Observabilidade](#-observabilidade)
 - [🧪 Testando a API](#-testando-a-api)
 - [🔧 Variáveis de ambiente](#-variáveis-de-ambiente)
+- [🔀 Fluxo real de execução](#-fluxo-real-de-execução)
 - [📁 Estrutura do projeto](#-estrutura-do-projeto)
 - [⚠️ Troubleshooting](#️-troubleshooting)
 - [Autor](#autor)
@@ -68,9 +69,9 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Fase 2 — Observabilidade + Cache | v2.1.0 → v2.7.0 | ✅ Concluída |
 | Fase 3 — Resiliência + Segurança | v3.1.0 → v3.5.0 | ✅ Concluída |
 | Fase 4 — Documentação | v4.1.0 | ✅ Concluída |
-| Fase 5 — CI/CD | v5.1.0 → v5.3.0 | 🔄 Em andamento |
-| Fase 6 — Bean Validation | v6.x | 📋 Planejado |
-| Fase 7 — Arquitetura Hexagonal | v7.x | 📋 Planejado |
+| Fase 5 — CI/CD | v5.1.0 → v5.3.0 | ✅ Concluída |
+| Fase 6 — Bean Validation | v6.x | ⏸️ Pendente — sem DTOs validáveis no momento |
+| Fase 7 — Arquitetura Hexagonal | v7.1.0 → v7.6.0 | ✅ Concluída |
 | Fase 8 — RabbitMQ | v8.x | 📋 Planejado |
 | Fase 9 — Notificações | v9.x | 📋 Planejado |
  
@@ -112,34 +113,34 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Jacoco | 0.8.14 | Cobertura de testes (threshold 70%) |
 | SonarCloud | 7.2.3.7755 | Análise estática + Quality Gate |
 | GitHub Actions | — | CI/CD: testes, Docker, releases, PDF |
+| SonarQube local | — | Análise estática no docker-compose.dev.yml |
 
 ---
 
 ## 🏗️ Arquitetura
 
 ```
-Cliente
+Cliente HTTP
   │  POST /api/transcriptions
   ▼
-Spring Boot API  :8080
+TranscriptionController  (adapter/in/http)
+  │  MultipartFile → TranscribeCommand(bytes, filename, contentType, size)
+  ▼
+TranscribeAudioUseCase  (application — implements TranscribeAudioPort)
+  │  1. validate(contentType) → 400 se tipo inválido
+  │  2. sha256(bytes) → cache.get() → HIT retorna com cached=true
+  │  3. MISS → speechPort.transcribe(bytes) → cache.put() → event.publish()
+  │  └── TranscriptionMetrics
   │
-  ├── MdcLoggingFilter    → requestId, httpMethod, requestUri
-  │
-  ├── TranscriptionService
-  │     ├── CacheService (SHA-256 → Redis)
-  │     │     └── HIT  → retorna cached=true (sem Whisper)
-  │     │     └── MISS → chama Whisper
-  │     │
-  │     └── SpeechToTextClient
-  │           ├── @Retry (3x, backoff 500ms→2s)
-  │           └── @CircuitBreaker (CLOSED/OPEN/HALF_OPEN)
-  │                 └── POST speaches:8000/v1/audio/transcriptions
-  │
-  └── TranscriptionMetrics (Micrometer)
-        requests.total · whisper.duration · file.size · cache.hit/miss
+  ├── WhisperAdapter → @Retry + @CircuitBreaker → speaches:8000
+  ├── RedisTranscriptionCacheAdapter → Redis (TTL 24h)
+  └── NoOpTranscriptionEventAdapter → log (RabbitMQ na Fase 8)
+
+shared/config/    MdcLoggingFilter · OpenApiConfig · WebClientConfig · RedisConfig
+shared/exception/ GlobalExceptionHandler (ProblemDetail RFC 9457)
 
 Infraestrutura (Docker network: backend)
-  ├── speaches    :8000  — Whisper GPU
+  ├── speaches    :8000  — Whisper
   ├── redis       :6379  — Cache (TTL 24h)
   ├── prometheus  :9090  — Scraping métricas
   ├── grafana     :3000  — Dashboards
@@ -347,7 +348,7 @@ docker exec -it redis redis-cli keys 'transcription:*'
 
 ---
 
-## Fluxo real de execução
+## 🔀 Fluxo real de execução
 
   <img width="100%" src="images/mermaid-diagram.png" alt="mermaid-diagram">
 
@@ -356,80 +357,45 @@ docker exec -it redis redis-cli keys 'transcription:*'
 ## 📁 Estrutura do projeto
 
 ```
-dio-speech-ai/
-├── src/
-│   ├── main/
-│   │   ├── java/com/example/diospeechai/
-│   │   │   ├── config/
-│   │   │   │   ├── WebClientConfig.java
-│   │   │   │   ├── RedisConfig.java            ← v2.3.0
-│   │   │   │   └── MdcLoggingFilter.java       ← v2.2.0
-│   │   │   │   └── OpenApiConfig.java          ← v4.1.0
-│   │   │   └── transcription/
-│   │   │       ├── documentation/
-|   │   │       │   └── TranscriptionControllerDocumentation.java  ← v4.1.0
-│   │   │       ├── cache/
-│   │   │       │   └── CacheService.java       ← v2.4.0
-│   │   │       ├── controller/
-│   │   │       │   └── TranscriptionController.java
-│   │   │       ├── dto/
-│   │   │       │   ├── TranscriptionResponse.java
-│   │   │       │   └── WhisperResponse.java
-│   │   │       ├── exception/
-│   │   │       │   ├── GlobalExceptionHandler.java
-│   │   │       │   ├── TranscriptionException.java
-│   │   │       │   └── ServiceUnavailableException.java  ← v3.1.0
-│   │   │       ├── metrics/
-│   │   │       │   └── TranscriptionMetrics.java         ← v2.1.0
-│   │   │       └── service/
-│   │   │           ├── SpeechToTextClient.java
-│   │   │           └── TranscriptionService.java
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       ├── application-dev.yml
-│   │       └── logback-spring.xml              ← v2.2.0
-│   └── test/
-│       └── java/com/example/diospeechai/
-│           └── transcription/
-│               └── TranscriptionIntegrationTest.java  ← v3.5.0
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                                   ← v5.2.0 testes + qualidade
-│       ├── docker.yml                               ← v5.2.0 build + push
-│       ├── release.yml                              ← v5.3.0 re-tag + GitHub Release
-│       └── docs.yml                                 ← v5.3.0 gera PDF técnico
-├── readme_pdf.md                                    ← v5.3.0 documento técnico para PDF
-├── about/                                           ← docs de cada fase
-│   ├── projeto.md
-│   ├── v2.1.0.md … v3.5.0.md
-│   └── v4.1.0.md
-├── docs/                                            ← GitHub Pages
-│   ├── index.html
-│   ├── architecture.html
-│   ├── observability.html
-│   ├── resilience.html
-│   ├── swagger.html                                 ← v4.1.0
-│   ├── roadmap_dio_speech_ai.html
-│   └── styles.css
-├── monitoring/
-│   ├── prometheus/
-│   │   ├── prometheus.yml          ← prod
-│   │   └── prometheus-dev.yml      ← dev
-│   └── grafana/
-│       ├── provisioning/
-│       │   ├── datasources/prometheus.yml
-│       │   └── dashboards/dashboards.yml
-│       └── dashboards/
-│           └── dio-speech-ai.json
-│           └── transcription_cache_total.json
-├── docker/Dockerfile
-├── docker-compose.yml              ← prod (6 serviços)
-├── docker-compose.dev.yml          ← dev  (6 serviços)
-├── audio.wav
-├── build.gradle
-├── VERSIONING.md
-└── release.sh
-
+src/main/java/com/example/diospeechai/
+├── DioSpeechAiApplication.java
+├── shared/
+│   ├── config/
+│   │   ├── MdcLoggingFilter.java        ← requestId + MDC
+│   │   ├── OpenApiConfig.java           ← SpringDoc sem JWT
+│   │   ├── RedisConfig.java             ← RedisTemplate<String, TranscriptionResult>
+│   │   └── WebClientConfig.java
+│   └── exception/
+│       └── GlobalExceptionHandler.java  ← ProblemDetail RFC 9457
+└── transcription/
+    ├── domain/                          ← zero import de framework
+    │   ├── model/Transcription.java     ← entidade: id, audioHash, text, createdAt
+    │   └── port/
+    │       ├── in/TranscribeAudioPort.java
+    │       └── out/
+    │           ├── SpeechToTextPort.java
+    │           ├── TranscriptionCachePort.java
+    │           └── TranscriptionEventPort.java
+    ├── application/                     ← orquestração pura
+    │   ├── TranscribeAudioUseCase.java
+    │   ├── command/TranscribeCommand.java   ← audioBytes, filename, contentType, size
+    │   └── result/TranscriptionResult.java
+    ├── infrastructure/                  ← adapters de saída
+    │   ├── speechtotext/whisper/
+    │   │   ├── WhisperAdapter.java      ← implements SpeechToTextPort
+    │   │   └── WhisperProperties.java
+    │   ├── cache/
+    │   │   └── RedisTranscriptionCacheAdapter.java
+    │   └── messaging/
+    │       └── NoOpTranscriptionEventAdapter.java  ← placeholder (Fase 8: RabbitMQ)
+    ├── adapter/in/http/                 ← adapter de entrada HTTP
+    │   ├── TranscriptionController.java
+    │   ├── dto/TranscriptionResponse.java
+    │   └── documentation/TranscriptionControllerDocumentation.java
+    ├── metrics/TranscriptionMetrics.java
+    └── exception/
+        ├── TranscriptionException.java
+        └── ServiceUnavailableException.java
 ```
 
 ---

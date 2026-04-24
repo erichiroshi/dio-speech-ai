@@ -35,35 +35,50 @@
 
     <!-- ── ESTADO ATUAL ──────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Arquitetura atual — v4.1.0</h2>
+      <h2>Arquitetura atual — v7.6.0 (Hexagonal)</h2>
       <pre>
   Cliente HTTP
     │  POST /api/transcriptions
     │  multipart/form-data { file: audio }
     ▼
-  Spring Boot API  :8080
+  TranscriptionController  (adapter/in/http)
+    │  MultipartFile → TranscribeCommand(bytes, filename, contentType, size)
+    ▼
+  TranscribeAudioPort  (interface — domain/port/in)
     │
-    ├── MdcLoggingFilter (requestId + MDC por requisição)
+    ▼
+  TranscribeAudioUseCase  (application)
+    │  1. validate(contentType) → 400 se inválido
+    │  2. sha256(bytes)
+    │  3. TranscriptionCachePort.get(hash)
+    │        HIT  → retorna em ~15ms com cached=true
+    │        MISS → continua
+    │  4. SpeechToTextPort.transcribe(bytes)
+    │  5. TranscriptionCachePort.put(hash, result)
+    │  6. TranscriptionEventPort.publish(Transcription)
+    │  7. TranscriptionMetrics
     │
-    ├── TranscriptionController
-    │     └── TranscriptionService
-    │           ├── CacheService → SHA-256 → Redis
-    │           │     ├── HIT  → retorna em ~15ms
-    │           │     └── MISS → chama Whisper
-    │           │
-    │           └── SpeechToTextClient
-    │                 ├── @Retry (3x, backoff 500ms→2s)
-    │                 └── @CircuitBreaker (CLOSED/OPEN/HALF_OPEN)
-    │                       └── POST speaches:8000/v1/audio/transcriptions
+    ├── SpeechToTextPort → WhisperAdapter  (infrastructure/speechtotext/whisper)
+    │     @Retry + @CircuitBreaker
+    │     ByteArrayResource → POST speaches:8000/v1/audio/transcriptions
     │
-    └── TranscriptionMetrics (Micrometer)
+    ├── TranscriptionCachePort → RedisTranscriptionCacheAdapter  (infrastructure/cache)
+    │     SHA-256 → "transcription:{hash}" → Redis (TTL 24h)
+    │
+    └── TranscriptionEventPort → NoOpTranscriptionEventAdapter  (infrastructure/messaging)
+          log.debug — substituído por RabbitMQ na Fase 8
+
+  shared/
+    ├── config/  MdcLoggingFilter · OpenApiConfig · WebClientConfig · RedisConfig
+    └── exception/  GlobalExceptionHandler (ProblemDetail RFC 9457)
 
   Infraestrutura (Docker Compose)
-    ├── speaches    :8000  — Whisper GPU
+    ├── speaches    :8000  — Whisper
     ├── redis       :6379  — Cache SHA-256 (TTL 24h)
     ├── prometheus  :9090  — Métricas
     ├── grafana     :3000  — Dashboards
-    └── zipkin      :9411  — Tracing</pre>
+    ├── zipkin      :9411  — Tracing
+    └── sonarqube   :9000  — Análise local (apenas dev)</pre>
     </section>
 
     <!-- ── EVOLUÇÃO PLANEJADA ──────────────────────────────────────────── -->
@@ -186,9 +201,9 @@
           <tr><td>Fase 2 <span class="badge done">✓</span></td><td>v2.1–v2.7</td><td>Prometheus, Grafana, Zipkin/OTel, Redis, Cache SHA-256, Logs JSON</td></tr>
           <tr><td>Fase 3 <span class="badge done">✓</span></td><td>v3.1–v3.5</td><td>CircuitBreaker, Retry, JWT (temporário), Testcontainers</td></tr>
           <tr><td>Fase 4 <span class="badge done">✓</span></td><td>v4.1.0</td><td>SpringDoc OpenAPI 3.1, Swagger UI, interfaces de documentação</td></tr>
-          <tr><td>Fase 5 <span class="badge planned">→</span></td><td>v5.1–v5.3</td><td>Jacoco, SonarCloud, ci.yml, docker.yml, release.yml, docs.yml. JWT removido.</td></tr>
-          <tr><td>Fase 6 <span class="badge planned">→</span></td><td>v6.1–v6.2</td><td>Bean Validation nos DTOs, GlobalExceptionHandler padronizado</td></tr>
-          <tr><td>Fase 7 <span class="badge planned">→</span></td><td>v7.1–v7.6</td><td>Arquitetura hexagonal completa — domínio, ports, adapters, use cases</td></tr>
+          <tr><td>Fase 5 <span class="badge done">✓</span></td><td>v5.1.0–v5.3.0</td><td>Jacoco 70%, SonarCloud, ci.yml, docker.yml, release.yml, docs.yml. JWT removido. SonarQube local no docker-compose.dev.yml.</td></tr>
+          <tr><td>Fase 6 <span class="badge" style="background:#1f2937;color:#9ca3af;border:1px solid #374151;">pendente</span></td><td>v6.x</td><td>Bean Validation — pendente. Retorna quando houver DTOs de entrada com campos validáveis (ex: JSON body). Sem previsão de versão.</td></tr>
+          <tr><td>Fase 7 <span class="badge done">✓</span></td><td>v7.1.0–v7.6.0</td><td>Arquitetura hexagonal completa. TranscribeAudioUseCase, WhisperAdapter, RedisTranscriptionCacheAdapter, pacotes shared/. contentType no TranscribeCommand. ByteArrayResource no WhisperAdapter.</td></tr>
           <tr><td>Fase 8 <span class="badge planned">→</span></td><td>v8.1–v8.3</td><td>RabbitMQ: produtor de eventos + consumer de pedidos + DLQ + Testcontainers</td></tr>
           <tr><td>Fase 9 <span class="badge planned">→</span></td><td>v9.1–v9.3</td><td>Notificações: e-mail (Spring Mail), SMS, WhatsApp via consumers RabbitMQ</td></tr>
         </tbody>

@@ -93,9 +93,9 @@
       <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Fase 2 — concluída (v2.7.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#7F77DD"></div>Fase 3 — concluída (v3.4.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#0e7490"></div>Fase 4 — concluída (v4.1.0)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 5 — em breve (v5.+)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Fase 6 — planejada (v6.+)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Fase 7 — planejada (v7.+)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 5 — concluída (v5.3.0)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Fase 6 — pendente (v6.+)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Fase 7 — concluída (v7.6.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#b45309"></div>Fase 8 — planejada (v8.+)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#be185d"></div>Fase 9 — planejada (v9.+)</div>
     </div>
@@ -266,13 +266,13 @@ const phases = [
   ,{
     id: 5, label: "Fase 5", title: "CI/CD — Qualidade e automação",
     color: "#0e7490", badgeBg: "#083344", badgeColor: "#67e8f9",
-    version: null, taskCount: 3, done: false,
+    version: "v5.3.0", taskCount: 3, done: true,
     tasks: [
       {
         title: "5.1 — Jacoco + SonarCloud (cobertura e qualidade)",
         desc: "Plugin Jacoco no build.gradle com threshold 70% + sonar.properties",
         tags: ["Jacoco", "SonarCloud", "Qualidade"],
-        done: false, version: null,
+        done: true, version: "5.1.0",
         detail: "Plugin Jacoco configurado no build.gradle. Task jacocoTestReport (XML para SonarCloud + Codecov, HTML para artifact). Task jacocoTestCoverageVerification com threshold 70% de linhas. test.finalizedBy jacocoTestReport. check.dependsOn jacocoTestCoverageVerification. Exclusões: config/, dto/, exception/, *Application, properties/. sonar.properties com projectKey, organization, coverage paths. spring-boot-starter-security e JWT removidos nesta versão.",
         snippet: "jacoco {\n    toolVersion = \"0.8.12\"\n}\njacocoTestCoverageVerification {\n    violationRules {\n        rule {\n            limit {\n                minimum = 0.70 // 70%\n            }\n        }\n    }\n}"
       },
@@ -280,7 +280,7 @@ const phases = [
         title: "5.2 — ci.yml + docker.yml (GitHub Actions)",
         desc: "CI de testes + SonarCloud + Codecov e CI de Docker com BuildKit, cache e Trivy",
         tags: ["GitHub Actions", "Docker Hub", "Trivy"],
-        done: false, version: null,
+        done: true, version: "v5.2.0",
         detail: "ci.yml: push qualquer branch + PR main. JDK 25 Temurin, cache Gradle, cache SonarCloud. ./gradlew clean build (testes + jacoco). ./gradlew sonar. Upload Codecov. docker.yml: Docker Buildx + BuildKit, cache type=gha. metadata-action para tags sha/branch/latest/pr. Login só em push. Push apenas se não for PR. Trivy scan CRITICAL+HIGH exit-code 0. Imagem: erichiroshi/dio-speech-ai.",
         snippet: "# Tags geradas automaticamente:\n# main  → latest + sha\n# branch → branch-name + sha  \n# PR    → pr-42 (sem push)"
       },
@@ -288,7 +288,7 @@ const phases = [
         title: "5.3 — release.yml + docs.yml + readme_pdf.md",
         desc: "Release automático na tag v* com re-tag da imagem + PDF técnico do projeto",
         tags: ["Release", "PDF", "Pandoc"],
-        done: false, version: null,
+        done: true, version: "v5.3.0",
         detail: "release.yml: dispara em push de tag v*. Re-tagueia imagem latest → v{version}. softprops/action-gh-release com generate_release_notes true. Body com instruções docker pull, compose, run. docs.yml: pandoc + texlive-xetex. Gera PDF do readme_pdf.md sem emojis nem badges. Upload como artifact 30 dias + anexado ao release em tags. readme_pdf.md: documento técnico enxuto — o que é, como rodar, endpoints, variáveis.",
         snippet: "# release.yml dispara em:\non:\n  push:\n    tags: [ \'v*\' ]\n\n# Não rebuilda — só re-tagueia\ndocker pull erichiroshi/dio-speech-ai:latest\ndocker tag erichiroshi/dio-speech-ai:latest \\\n           erichiroshi/dio-speech-ai:$VERSION"
       }
@@ -296,9 +296,9 @@ const phases = [
   }
 
   ,{
-    id: 6, label: "Fase 6", title: "Bean Validation — DTOs e tratamento de erros",
+    id: 6, label: "Fase 6", title: "Bean Validation — DTOs e tratamento de erros (pendente)",
     color: "#15803d", badgeBg: "#052e16", badgeColor: "#86efac",
-    version: null, taskCount: 2, done: false,
+    version: "pendente", taskCount: 2, done: false,
     tasks: [
       {
         title: "6.1 — Bean Validation nos DTOs de entrada",
@@ -321,13 +321,13 @@ const phases = [
   ,{
     id: 7, label: "Fase 7", title: "Arquitetura Hexagonal (Ports & Adapters)",
     color: "#7c3aed", badgeBg: "#2e1065", badgeColor: "#c4b5fd",
-    version: null, taskCount: 6, done: false,
+    version: "v7.1.0–v7.6.0", taskCount: 6, done: true,
     tasks: [
       {
         title: "7.1 — Domínio: entidade Transcription + ports de saída",
         desc: "Criar o núcleo do domínio sem nenhuma dependência de framework",
         tags: ["Domain", "Ports", "Hexagonal"],
-        done: false, version: null,
+        done: true, version: "v7.1.0",
         detail: "Criar transcription/domain/model/Transcription.java (entidade), transcription/domain/port/out/SpeechToTextPort.java (contrato do serviço de IA), TranscriptionCachePort.java (contrato do cache) e TranscriptionEventPort.java (contrato da fila). Zero import Spring nestas classes.",
         snippet: "// PORT — o domínio define o contrato\npublic interface SpeechToTextPort {\n    String transcribe(byte[] audioBytes);\n}\n\n// O adapter (Whisper, OpenAI...) implementa este contrato\n// O domínio nunca conhece a implementação"
       },
@@ -335,7 +335,7 @@ const phases = [
         title: "7.2 — Domínio: port de entrada + command/result",
         desc: "TranscribeAudioPort (interface do caso de uso), TranscribeCommand e TranscriptionResult",
         tags: ["Domain", "Port-In", "Command"],
-        done: false, version: null,
+        done: true, version: "v7.2.0",
         detail: "TranscribeAudioPort é a interface que o controller e o consumer RabbitMQ vão usar. TranscribeCommand carrega audioBytes, filename, sizeBytes. TranscriptionResult carrega text, fileSizeBytes, cached. Nenhum deles conhece HTTP ou RabbitMQ.",
         snippet: "public interface TranscribeAudioPort {\n    TranscriptionResult transcribe(TranscribeCommand command);\n}\n\n// Usado pelo HTTP adapter:\nport.transcribe(new TranscribeCommand(bytes, filename, size));\n\n// Usado pelo RabbitMQ adapter (mesma interface):\nport.transcribe(new TranscribeCommand(msgBytes, msgName, msgSize));"
       },
@@ -343,7 +343,7 @@ const phases = [
         title: "7.3 — Application: TranscribeAudioUseCase",
         desc: "Implementação do caso de uso — orquestra cache, IA e evento",
         tags: ["Application", "UseCase"],
-        done: false, version: null,
+        done: true, version: "v7.3.0",
         detail: "TranscribeAudioUseCase implementa TranscribeAudioPort. Injeta SpeechToTextPort, TranscriptionCachePort e TranscriptionEventPort (todas interfaces). Fluxo: hash SHA-256 → cache get → hit retorna → miss chama IA → cache put → publica evento → métricas → retorna resultado.",
         snippet: "// Teste unitário sem Spring, sem Docker:\nwhen(cachePort.get(hash)).thenReturn(Optional.empty());\nwhen(speechPort.transcribe(bytes)).thenReturn(\"texto\");\nvar result = useCase.transcribe(command);\nverify(cachePort).put(hash, result);\nverify(eventPort).publish(any());"
       },
@@ -351,7 +351,7 @@ const phases = [
         title: "7.4 — Infrastructure: WhisperAdapter + RedisTranscriptionCacheAdapter",
         desc: "Mover SpeechToTextClient e CacheService para adapters que implementam os ports",
         tags: ["Infrastructure", "Adapter", "Whisper", "Redis"],
-        done: false, version: null,
+        done: true, version: "v7.4.0",
         detail: "WhisperAdapter implementa SpeechToTextPort. Mantém @Retry + @CircuitBreaker. RedisTranscriptionCacheAdapter implementa TranscriptionCachePort. Mantém SHA-256, TTL, tolerância a falhas. Pacotes: transcription/infrastructure/speechtotext/whisper/ e transcription/infrastructure/cache/.",
         snippet: "@Component\npublic class WhisperAdapter implements SpeechToTextPort {\n    // @Retry + @CircuitBreaker aqui\n    public String transcribe(byte[] audioBytes) { ... }\n}\n\n// Futuramente:\n@Primary @ConditionalOnProperty(\"speechtotext.provider=openai\")\npublic class OpenAiSpeechAdapter implements SpeechToTextPort { ... }"
       },
@@ -359,7 +359,7 @@ const phases = [
         title: "7.5 — Adapter in/http: TranscriptionController refatorado",
         desc: "Controller injeta TranscribeAudioPort (interface), não mais o service diretamente",
         tags: ["Adapter", "HTTP", "Controller"],
-        done: false, version: null,
+        done: true, version: "v7.5.0",
         detail: "TranscriptionController move para transcription/adapter/in/http/. Injeta TranscribeAudioPort. Converte MultipartFile → TranscribeCommand, TranscriptionResult → TranscriptionResponse. O controller não conhece Redis, Whisper ou RabbitMQ.",
         snippet: "// Antes: private final TranscriptionService service;\n// Depois: private final TranscribeAudioPort transcribePort;\n\n// O controller só converte e delega:\nvar command = new TranscribeCommand(file.getBytes(), file.getOriginalFilename(), file.getSize());\nvar result = transcribePort.transcribe(command);\nreturn ResponseEntity.ok(toResponse(result));"
       },
@@ -367,7 +367,7 @@ const phases = [
         title: "7.6 — Reorganizar auth para hexagonal + testes unitários dos casos de use",
         desc: "auth com domain/port/application/infrastructure/adapter + GenerateTokenUseCase",
         tags: ["Auth", "Hexagonal", "Testes"],
-        done: false, version: null,
+        done: true, version: "v7.6.0",
         detail: "Mover auth para a mesma estrutura hexagonal: JwtProperties para auth/infrastructure/jwt/, AuthController para auth/adapter/in/http/. Criar GenerateTokenUseCase. Adicionar TranscribeAudioUseCaseTest e GenerateTokenUseCaseTest — testes unitários puros com mocks, sem Spring.",
         snippet: "// TranscribeAudioUseCaseTest — zero Spring, zero Docker:\n@ExtendWith(MockitoExtension.class)\nclass TranscribeAudioUseCaseTest {\n    @Mock SpeechToTextPort speechPort;\n    @Mock TranscriptionCachePort cachePort;\n    @Mock TranscriptionEventPort eventPort;\n    @InjectMocks TranscribeAudioUseCase useCase;\n}"
       }
@@ -438,7 +438,7 @@ const phases = [
   }
 ];
 
-let openPhases = new Set([5]);
+let openPhases = new Set([8]);
 let activeTask = null;
 
 function renderPhases() {
