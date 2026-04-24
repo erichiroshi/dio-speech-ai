@@ -96,7 +96,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Fase 5 — concluída (v5.3.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Fase 6 — pendente (v6.+)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Fase 7 — concluída (v7.6.0)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#b45309"></div>Fase 8 — planejada (v8.+)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#b45309"></div>Fase 8 — concluída (v8.3.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#be185d"></div>Fase 9 — planejada (v9.+)</div>
     </div>
 
@@ -376,13 +376,13 @@ const phases = [
   ,{
     id: 8, label: "Fase 8", title: "Mensageria com RabbitMQ",
     color: "#b45309", badgeBg: "#451a03", badgeColor: "#fcd34d",
-    version: null, taskCount: 3, done: false,
+    version: "v8.1.0-v8.3.0", taskCount: 3, done: true,
     tasks: [
       {
         title: "8.1 — Infraestrutura RabbitMQ + TranscriptionEventPort adapter",
         desc: "Docker Compose + RabbitConfig + RabbitTranscriptionEventAdapter (produtor)",
         tags: ["RabbitMQ", "Infrastructure", "Producer"],
-        done: false, version: null,
+        done: true, version: "v8.1.0",
         detail: "Adicionar rabbitmq:3-management ao docker-compose.yml e dev.yml. Criar RabbitConfig (Exchange, Queue, Binding). Criar RabbitTranscriptionEventAdapter implementando TranscriptionEventPort — publica TranscriptionCompletedEvent após cada transcrição bem-sucedida. O caso de uso já chama eventPort.publish() desde a v5.3.",
         snippet: "// TranscriptionCompletedEvent\n{ transcriptionId, audioHash, text, fileSizeBytes, completedAt }\n\n// Exchange: transcription.events\n// Routing key: transcription.completed\n// Qualquer serviço (SMS, email, WhatsApp) assina esta exchange"
       },
@@ -390,7 +390,7 @@ const phases = [
         title: "8.2 — Consumer: receber pedidos de transcrição via fila",
         desc: "TranscriptionRequestConsumer — @RabbitListener que usa o mesmo caso de uso do HTTP",
         tags: ["RabbitMQ", "Consumer", "Adapter"],
-        done: false, version: null,
+        done: true, version: "v8.2.0",
         detail: "TranscriptionRequestConsumer em transcription/adapter/in/messaging/. Recebe TranscriptionRequestMessage, converte para TranscribeCommand, chama TranscribeAudioPort (mesma interface usada pelo controller HTTP). Resultado publicado automaticamente pelo caso de uso via TranscriptionEventPort.",
         snippet: "@RabbitListener(queues = \"transcription.requests\")\npublic void onTranscriptionRequest(TranscriptionRequestMessage msg) {\n    var command = new TranscribeCommand(msg.audioBytes(), msg.filename(), msg.sizeBytes());\n    transcribePort.transcribe(command); // mesmo caso de uso do HTTP\n}"
       },
@@ -398,7 +398,7 @@ const phases = [
         title: "8.3 — Testes de integração com RabbitMQ real (Testcontainers)",
         desc: "RabbitMQ via Testcontainers + verificar publicação do evento após transcrição",
         tags: ["RabbitMQ", "Testcontainers", "Integração"],
-        done: false, version: null,
+        done: true, version: "v8.3.0",
         detail: "Adicionar rabbitmq Testcontainers ao TranscriptionIntegrationTest. Verificar que após uma transcrição bem-sucedida o evento TranscriptionCompletedEvent é publicado na exchange correta. Testar consumer: publicar TranscriptionRequestMessage e verificar resultado cacheado.",
         snippet: "@Container\nstatic RabbitMQContainer rabbit = new RabbitMQContainer(\"rabbitmq:3-management-alpine\");\n\n// Verificar evento publicado:\nMessage msg = rabbitTemplate.receive(\"transcription.completed.test\", 3000);\nassertThat(msg).isNotNull();\nassertThat(parseEvent(msg).text()).isEqualTo(\"audio transcrito\");"
       }
@@ -438,7 +438,7 @@ const phases = [
   }
 ];
 
-let openPhases = new Set([8]);
+let openPhases = new Set([9]);
 let activeTask = null;
 
 function renderPhases() {

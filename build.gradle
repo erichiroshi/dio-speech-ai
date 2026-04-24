@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '8.1.0'
+version = '8.3.0'
 description = 'Serviço de transcrição de áudio'
 
 java {
@@ -41,7 +41,7 @@ ext{
 	'**/*Application*',
 	'**/documentation/**',
 	'**/messaging/NoOp*',      // placeholder sem lógica testável
-	'**/adapter/out/messaging/event/**' // DTO de evento — sem lógica
+	'**/adapter/out/messaging/event/**'	 // DTO de evento — sem lógica
 	]
 }
 
