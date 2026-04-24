@@ -64,6 +64,33 @@ services:
     networks:
       - backend
 
+  # ── Serviço RabbitMQ (dev) ────────────────────────────────────────────────────
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # http://localhost:15672 (admin/admin)
+
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - backend	  
+
   # ── Prometheus ───────────────────────────────────────────────────────────────
   # v2.1.0 — coleta métricas da API via /actuator/prometheus a cada 10s
   prometheus:
@@ -156,10 +183,9 @@ services:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_conf:/opt/sonarqube/conf
       - sonarqube_temp:/opt/sonarqube/temp
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000/api/system/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/api/system/status" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -173,8 +199,8 @@ volumes:
   sonarqube_data:
   sonarqube_logs:
   sonarqube_extensions:
-  sonarqube_conf:
   sonarqube_temp:
+  rabbitmq_data:
 
 networks:
   backend:

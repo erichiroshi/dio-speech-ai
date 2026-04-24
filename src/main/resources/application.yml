@@ -16,6 +16,25 @@ spring:
       connect-timeout: 2s
       timeout: 2s			
 
+  # ── Mensageria v8.1.0 ────────────────────────────────────────────────────────
+  rabbitmq:
+    host:     ${RABBITMQ_HOST:localhost}
+    port:     ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin}
+    # Confirmação de entrega — garante que a mensagem chegou ao broker
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: auto          # ACK automático em sucesso, NACK em exceção
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-retries: 3              # 3 tentativas antes de ir para DLQ
+          multiplier: 2.0              # backoff: 1s → 2s → 4s
+          max-interval: 10000ms
+
 whisper:
   base-url: ${WHISPER_BASE_URL:http://localhost:8000}
   model: ${WHISPER_MODEL:Systran/faster-whisper-small}

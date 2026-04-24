@@ -79,6 +79,33 @@ services:
     networks:
       - backend
 
+  # ── Serviço RabbitMQ ──────────────────────────────────────────────────────────
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+
+    ports:
+      - "5672:5672"    # AMQP — conexão da aplicação
+      - "15672:15672"  # Management UI — http://localhost:15672 (admin/admin)
+
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - backend
+
   # ── API Spring Boot ──────────────────────────────────────────────────────────
   dio-speaches-ai:
     container_name: dio-speaches-ai
@@ -100,11 +127,17 @@ services:
       CACHE_TTL_HOURS: 24
       TRACING_SAMPLING: 1.0
       ZIPKIN_BASE_URL: http://zipkin:9411/api/v2/spans
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin
 
     depends_on:
       speaches:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
     healthcheck:
@@ -212,7 +245,7 @@ volumes:
   prometheus_data:
   redis_data:
   grafana_data:
-
+  rabbitmq_data:
 
 networks:
   backend:

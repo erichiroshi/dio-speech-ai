@@ -7,7 +7,17 @@ spring:
     redis:
       host: localhost
       port: 6379
- 
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    listener:
+      simple:
+        retry:
+          max-retries: 2   # menos tentativas em dev
+
 cache:
   transcription:
     ttl-hours: 1

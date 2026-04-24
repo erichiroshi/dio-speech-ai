@@ -1,4 +1,4 @@
-package com.example.diospeechai.shared.config;
+package com.example.diospeechai.transcription.infrastructure.cache.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

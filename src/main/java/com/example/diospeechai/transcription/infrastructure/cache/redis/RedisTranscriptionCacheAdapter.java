@@ -1,4 +1,4 @@
-package com.example.diospeechai.transcription.infrastructure.cache;
+package com.example.diospeechai.transcription.infrastructure.cache.redis;
 
 import java.time.Duration;
 import java.util.Optional;
