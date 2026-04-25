@@ -1,7 +1,6 @@
 package com.example.diospeechai.transcription;
 
 import java.util.Base64;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -23,14 +23,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
+import com.example.diospeechai.notification.adapter.in.messaging.TranscriptionCompletedConsumer;
 import com.example.diospeechai.transcription.adapter.in.messaging.TranscriptionRequestMessage;
-import com.example.diospeechai.transcription.adapter.out.messaging.event.TranscriptionCompletedEvent;
 import com.example.diospeechai.transcription.infrastructure.messaging.rabbit.RabbitMQConfig;
 import com.redis.testcontainers.RedisContainer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -107,6 +109,7 @@ class TranscriptionIntegrationTest {
     @Autowired RedisTemplate<String, ?> redisTemplate;
     @Autowired CircuitBreakerRegistry circuitBreakerRegistry;
     @Autowired RabbitTemplate rabbitTemplate;
+    @MockitoSpyBean TranscriptionCompletedConsumer completedConsumer;
 
     // ── Setup ─────────────────────────────────────────────────────────────────
 
@@ -208,14 +211,16 @@ class TranscriptionIntegrationTest {
         mockMvc.perform(multipart("/api/transcriptions").file(audioFile()))
                 .andExpect(status().isOk());
 
-        // Aguarda publicação assíncrona (até 3s)
-        TranscriptionCompletedEvent event = (TranscriptionCompletedEvent)
-                rabbitTemplate.receiveAndConvert(RabbitMQConfig.COMPLETED_QUEUE, 3000);
-
-        assertThat(event).isNotNull();
-        assertThat(event.text()).isEqualTo("texto publicado no rabbit");
-        assertThat(event.audioHash()).isNotBlank();
-        assertThat(event.transcriptionId()).isNotNull();
+        await()
+        .atMost(5, SECONDS)
+        .untilAsserted(() -> {
+            verify(completedConsumer).onTranscriptionCompleted(argThat(event ->
+                event.text().equals("texto publicado no rabbit") &&
+                event.audioHash() != null &&
+                !event.audioHash().isBlank() &&
+                event.transcriptionId() != null
+            ));
+        });
     }
 
     @Test
@@ -256,17 +261,13 @@ class TranscriptionIntegrationTest {
                 message);
 
         await()
-        .atMost(10, SECONDS) // Timeout máximo
-        .pollInterval(500, TimeUnit.MILLISECONDS) // Frequência de checagem
+        .atMost(10, SECONDS)
         .untilAsserted(() -> {
-            Object received = rabbitTemplate.receiveAndConvert(RabbitMQConfig.COMPLETED_QUEUE);
-            assertThat(received).isNotNull();
-            
-            TranscriptionCompletedEvent event = (TranscriptionCompletedEvent) received;
-
-        assertThat(event).isNotNull();
-        assertThat(event.text()).isEqualTo("transcrito via fila");
-        assertThat(event.audioHash()).isNotBlank();
+            verify(completedConsumer).onTranscriptionCompleted(argThat(event ->
+                event.text().equals("transcrito via fila") &&
+                event.audioHash() != null &&
+                !event.audioHash().isBlank()
+            ));
         });
     }
 }

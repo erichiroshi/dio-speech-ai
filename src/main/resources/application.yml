@@ -86,6 +86,11 @@ management:
       zipkin:
         endpoint: ${ZIPKIN_BASE_URL:http://localhost:9411/api/v2/spans}
 
+# ── Notificações v9.1.0 ─────────────────────────────────────────────────────
+notification:
+  default-recipient: ${NOTIFICATION_RECIPIENT:noreply@example.com}
+  channel:           ${NOTIFICATION_CHANNEL:EMAIL}   # EMAIL | SMS | WHATSAPP
+
 # ── Resiliência v3.1.0 / v3.2.0 ─────────────────────────────────────────────
 resilience4j:
   circuitbreaker:
