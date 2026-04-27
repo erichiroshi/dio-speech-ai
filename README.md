@@ -73,7 +73,7 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Fase 6 — Bean Validation | v6.x | ⏸️ Pendente — sem DTOs validáveis no momento |
 | Fase 7 — Arquitetura Hexagonal | v7.1.0 → v7.6.0 | ✅ Concluída |
 | Fase 8 — RabbitMQ | v8.1.0 → v8.3.0 | ✅ Concluída |
-| Fase 9 — Notificações | v9.x | 📋 Planejado |
+| Fase 9 — Notificações | v9.1.0 - v9.3.0 | ✅ Concluída |
  
 ---
 

@@ -9,5 +9,6 @@ package com.example.diospeechai.notification.domain.model;
 public enum NotificationChannel {
     EMAIL,
     SMS,
-    WHATSAPP
+    WHATSAPP,
+    NO_OP
 }

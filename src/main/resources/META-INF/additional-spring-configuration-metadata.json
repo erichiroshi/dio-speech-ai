@@ -28,5 +28,40 @@
     "name": "notification.email.from",
     "type": "java.lang.String",
     "description": "A description for 'notification.email.from'"
+  },
+  {
+    "name": "notification.sms.base-url",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.sms.base-url'"
+  },
+  {
+    "name": "notification.sms.apiKey",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.sms.apiKey'"
+  },
+  {
+    "name": "notification.sms.senderId",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.sms.senderId'"
+  },
+  {
+    "name": "notification.sms.sendPath",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.sms.sendPath'"
+  },
+  {
+    "name": "notification.whatsapp.base-url",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.whatsapp.base-url'"
+  },
+  {
+    "name": "notification.whatsapp.sendPath",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.whatsapp.sendPath'"
+  },
+  {
+    "name": "notification.whatsapp.accessToken",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.whatsapp.accessToken'"
   }
 ]}

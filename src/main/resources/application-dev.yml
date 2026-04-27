@@ -22,6 +22,9 @@ cache:
   transcription:
     ttl-hours: 1
 
+notification:
+  channel: ${NOTIFICATION_CHANNEL:NO_OP}   # EMAIL | SMS | WHATSAPP
+
 management:
   tracing:
     sampling:

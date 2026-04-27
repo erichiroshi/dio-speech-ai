@@ -7,8 +7,8 @@ plugins {
 }
 
 group = 'com.example'
-version = '9.2.0'
-description = 'Serviço de transcrição de áudio'
+version = '9.3.0'
+description = 'Serviço de transcrição de áudio com notificações multicanal'
 
 java {
 	toolchain {
@@ -40,8 +40,14 @@ ext{
 	'**/exception/*Exception*',
 	'**/*Application*',
 	'**/documentation/**',
-	'**/messaging/NoOp*',      // placeholder sem lógica testável
-	'**/adapter/out/messaging/event/**'	 // DTO de evento — sem lógica
+	'**/messaging/NoOp*',
+	'**/adapter/out/messaging/event/**',
+	'**/notification/adapter/in/messaging/**',    // consumer base — sem lógica própria
+	'**/notification/infrastructure/email/EmailProperties*',
+	'**/notification/infrastructure/sms/SmsProperties*',
+	'**/notification/infrastructure/whatsapp/WhatsAppProperties*',
+	'**/notification/domain/model/NotificationChannel*',
+	'**/notification/domain/model/NotificationRequest*',
 	]
 }
 
