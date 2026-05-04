@@ -102,7 +102,7 @@ management:
 # ── Notificações v9.1.0 ─────────────────────────────────────────────────────
 notification:
   default-recipient: ${NOTIFICATION_RECIPIENT:noreply@example.com}
-  channel:           ${NOTIFICATION_CHANNEL:EMAIL}   # EMAIL | SMS | WHATSAPP
+  channel:           ${NOTIFICATION_CHANNEL:NO_OP}   # EMAIL | SMS | WHATSAPP
 
   email:
     from: ${NOTIFICATION_EMAIL_FROM:noreply@diospeechai.com}

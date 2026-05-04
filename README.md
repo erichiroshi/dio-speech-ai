@@ -109,6 +109,11 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Redis | 8.6.2-alpine | Cache de transcrições por SHA-256 |
 | Resilience4j | 2.4.0 | CircuitBreaker + Retry com backoff |
 | Testcontainers | 2.0.4 | Testes de integração com Redis real |
+| RabbitMQ | 3-management-alpine | Mensageria assíncrona + DLQ |
+| Spring AMQP | — | Producer + consumer + DLQ |
+| Spring Mail | — | Notificações por e-mail (SMTP) |
+| GreenMail | 2.1.3 | Servidor SMTP embarcado nos testes |
+| MockWebServer | 5.3.2 | Simula Speaches, SMS e WhatsApp nos testes |
 | SpringDoc OpenAPI | 3.0.3 | Spec OAS 3.1 + Swagger UI |
 | Jacoco | 0.8.14 | Cobertura de testes (threshold 70%) |
 | SonarCloud | 7.2.3.7755 | Análise estática + Quality Gate |
@@ -345,6 +350,21 @@ docker exec -it redis redis-cli keys 'transcription:*'
 | `CACHE_TTL_HOURS` | `24` | TTL das transcrições em cache |
 | `ZIPKIN_BASE_URL` | `http://localhost:9411` | URL do Zipkin |
 | `TRACING_SAMPLING` | `1.0` | Taxa de sampling (0.0–1.0) |
+| `RABBITMQ_HOST` | `localhost` | Host do RabbitMQ |
+| `RABBITMQ_PORT` | `5672` | Porta AMQP |
+| `RABBITMQ_USER` | `admin` | Usuário RabbitMQ |
+| `RABBITMQ_PASS` | `admin` | Senha RabbitMQ |
+| `NOTIFICATION_CHANNEL` | `EMAIL` | Canal ativo: EMAIL, SMS, WHATSAPP |
+| `NOTIFICATION_RECIPIENT` | `noreply@example.com` | Destinatário padrão |
+| `NOTIFICATION_EMAIL_FROM` | `noreply@diospeechai.com` | Remetente e-mail |
+| `MAIL_HOST` | `smtp.gmail.com` | Servidor SMTP |
+| `MAIL_PORT` | `587` | Porta SMTP |
+| `MAIL_USERNAME` | — | Usuário SMTP |
+| `MAIL_PASSWORD` | — | Senha / App Password |
+| `NOTIFICATION_SMS_BASE_URL` | `https://api.vonage.com` | URL base SMS |
+| `NOTIFICATION_SMS_API_KEY` | — | API key SMS (Twilio, Vonage...) |
+| `NOTIFICATION_WHATSAPP_BASE_URL` | `https://graph.facebook.com` | Meta Cloud API |
+| `NOTIFICATION_WHATSAPP_ACCESS_TOKEN` | — | Token de acesso WhatsApp |
 
 ---
 
@@ -367,35 +387,36 @@ src/main/java/com/example/diospeechai/
 │   │   └── WebClientConfig.java
 │   └── exception/
 │       └── GlobalExceptionHandler.java  ← ProblemDetail RFC 9457
-└── transcription/
-    ├── domain/                          ← zero import de framework
-    │   ├── model/Transcription.java     ← entidade: id, audioHash, text, createdAt
-    │   └── port/
-    │       ├── in/TranscribeAudioPort.java
-    │       └── out/
-    │           ├── SpeechToTextPort.java
-    │           ├── TranscriptionCachePort.java
-    │           └── TranscriptionEventPort.java
-    ├── application/                     ← orquestração pura
-    │   ├── TranscribeAudioUseCase.java
-    │   ├── command/TranscribeCommand.java   ← audioBytes, filename, contentType, size
-    │   └── result/TranscriptionResult.java
-    ├── infrastructure/                  ← adapters de saída
-    │   ├── speechtotext/whisper/
-    │   │   ├── WhisperAdapter.java      ← implements SpeechToTextPort
-    │   │   └── WhisperProperties.java
-    │   ├── cache/
-    │   │   └── RedisTranscriptionCacheAdapter.java
-    │   └── messaging/
-    │       └── NoOpTranscriptionEventAdapter.java  ← placeholder (Fase 8: RabbitMQ)
-    ├── adapter/in/http/                 ← adapter de entrada HTTP
-    │   ├── TranscriptionController.java
-    │   ├── dto/TranscriptionResponse.java
-    │   └── documentation/TranscriptionControllerDocumentation.java
-    ├── metrics/TranscriptionMetrics.java
-    └── exception/
-        ├── TranscriptionException.java
-        └── ServiceUnavailableException.java
+├── transcription/
+│   ├── domain/                          ← zero import de framework
+│   │   ├── model/Transcription.java
+│   │   └── port/
+│   │       ├── in/TranscribeAudioPort.java
+│   │       └── out/ SpeechToTextPort · TranscriptionCachePort · TranscriptionEventPort
+│   ├── application/
+│   │   ├── TranscribeAudioUseCase.java  ← orquestração pura
+│   │   ├── command/TranscribeCommand.java
+│   │   └── result/TranscriptionResult.java
+│   ├── infrastructure/                  ← adapters de saída
+│   │   ├── speechtotext/whisper/WhisperAdapter.java
+│   │   ├── cache/redis/RedisTranscriptionCacheAdapter.java
+│   │   └── messaging/rabbit/RabbitTranscriptionEventAdapter.java
+│   ├── adapter/
+│   │   ├── in/http/TranscriptionController.java
+│   │   ├── in/messaging/TranscriptionRequestConsumer.java
+│   │   └── out/messaging/event/TranscriptionCompletedEvent.java
+│   ├── metrics/TranscriptionMetrics.java
+│   └── exception/
+└── notification/
+    ├── domain/
+    │   ├── model/ NotificationChannel · NotificationRequest
+    │   └── port/NotificationPort.java   ← interface de cada canal
+    ├── application/NotifyUseCase.java   ← delega ao adapter pelo canal
+    ├── adapter/in/messaging/TranscriptionCompletedConsumer.java
+    └── infrastructure/
+        ├── email/EmailNotificationAdapter.java  ← Spring Mail
+        ├── sms/SmsNotificationAdapter.java      ← WebClient (Twilio, Vonage...)
+        └── whatsapp/WhatsAppNotificationAdapter.java  ← Meta Cloud API
 ```
 
 ---
