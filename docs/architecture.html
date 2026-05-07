@@ -35,7 +35,7 @@
 
     <!-- ── ESTADO ATUAL ──────────────────────────────────────────────── -->
     <section class="card">
-      <h2>Arquitetura atual — v9.3.0</h2>
+      <h2>Arquitetura atual — v10.2.0</h2>
       <pre>
   Cliente HTTP
     │  POST /api/transcriptions
@@ -205,7 +205,8 @@
           <tr><td>Fase 6 <span class="badge" style="background:#1f2937;color:#9ca3af;border:1px solid #374151;">pendente</span></td><td>v6.x</td><td>Bean Validation — pendente. Retorna quando houver DTOs de entrada com campos validáveis (ex: JSON body). Sem previsão de versão.</td></tr>
           <tr><td>Fase 7 <span class="badge done">✓</span></td><td>v7.1.0–v7.6.0</td><td>Arquitetura hexagonal completa. TranscribeAudioUseCase, WhisperAdapter, RedisTranscriptionCacheAdapter, pacotes shared/. contentType no TranscribeCommand. ByteArrayResource no WhisperAdapter.</td></tr>
           <tr><td>Fase 8 <span class="badge done">✓</span></td><td>v8.1.0–v8.3.0</td><td>RabbitMQ: produtor de eventos + consumer de pedidos + DLQ + Testcontainers</td></tr>
-          <tr><td>Fase 9 <span class="badge planned">→</span></td><td>v9.1–v9.3</td><td>Notificações: e-mail (Spring Mail), SMS, WhatsApp via consumers RabbitMQ</td></tr>
+          <tr><td>Fase 9 <span class="badge done">✓</span></td><td>v9.1–v9.3</td><td>Notificações: e-mail (Spring Mail), SMS, WhatsApp via consumers RabbitMQ</td></tr>
+        <tr><td>Fase 10 <span class="badge done">✓</span></td><td>v10.1.0–v10.2.0</td><td>Spring AI + Ollama: análise síncrona via POST /{hash}/analysis · LLM local · cache Redis 72h · audioHash na resposta de transcrição</td></tr>
         </tbody>
       </table>
     </section>

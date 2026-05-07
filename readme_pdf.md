@@ -2,7 +2,7 @@
 
 API REST de transcricao de audio com Whisper via Speaches, com mensageria assincrona e notificacoes multicanal.
 
-Versao: 9.3.0 | Java 25 | Spring Boot 4.x
+Versao: 10.2.0 | Java 25 | Spring Boot 4.x
 
 ---
 
@@ -97,6 +97,37 @@ Transcreve um arquivo de audio.
 }
 ```
 
+### POST /api/transcriptions/{audioHash}/analysis
+
+Gera um resumo da transcricao identificada pelo audioHash.
+
+O audioHash e retornado por POST /api/transcriptions no campo audioHash.
+
+**Response 200 — gerado agora:**
+
+```json
+{
+  "audioHash": "a1b2c3...",
+  "summary": "O audio discute o planejamento do projeto e define os proximos passos.",
+  "model": "llama3.2:3b"
+}
+```
+
+**Response 200 — cache hit (~15ms):**
+
+```json
+{
+  "audioHash": "a1b2c3...",
+  "summary": "O audio discute o planejamento do projeto.",
+  "model": "llama3.2:3b",
+  "cached": true
+}
+```
+
+**Response 404** — transcricao nao encontrada. Transcreva o audio primeiro.
+
+**Response 503** — Ollama indisponivel. Verifique se o container esta rodando.
+
 ### GET /actuator/health
 
 Retorna status da aplicacao, CircuitBreaker e RabbitMQ.
@@ -178,6 +209,9 @@ Para receber o evento apos cada transcricao:
 | `NOTIFICATION_WHATSAPP_BASE_URL` | `https://graph.facebook.com` | Meta Cloud API |
 | `NOTIFICATION_WHATSAPP_SEND_PATH` | `/v19.0/.../messages` | Path de envio WhatsApp |
 | `NOTIFICATION_WHATSAPP_ACCESS_TOKEN` | — | Token de acesso WhatsApp |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | URL do Ollama |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Modelo LLM (llama3.2:1b, mistral:7b...) |
+| `CACHE_SUMMARY_TTL_HOURS` | `72` | TTL do cache de resumos |
 | `ZIPKIN_BASE_URL` | `http://localhost:9411` | URL do Zipkin |
 | `TRACING_SAMPLING` | `1.0` | Taxa de sampling (0.0 a 1.0) |
 
@@ -250,6 +284,27 @@ Para trocar de provedor SMS ou WhatsApp: alterar as variaveis de ambiente.
 Para trocar o canal ativo: `NOTIFICATION_CHANNEL=EMAIL|SMS|WHATSAPP`.
 
 ---
+
+## Analise inteligente (Spring AI + Ollama)
+
+Apos transcrever um audio, o cliente pode solicitar um resumo via LLM local.
+
+Fluxo:
+1. POST /api/transcriptions → recebe audioHash na resposta
+2. POST /api/transcriptions/{audioHash}/analysis → resumo em 2-4 frases
+
+O resumo e gerado pelo Ollama rodando localmente. Sem API key. Sem custo.
+Cache Redis com TTL de 72h — segunda chamada retorna em ~15ms.
+
+Modelos sugeridos por memoria:
+- Menos de 8GB: llama3.2:1b ou gemma3:1b
+- 8 a 16GB: llama3.2:3b ou mistral:7b
+- 16GB+: deepseek-r1:7b
+
+Baixar modelo:
+```bash
+docker exec -it ollama ollama pull llama3.2:3b
+```
 
 ## CI/CD
 

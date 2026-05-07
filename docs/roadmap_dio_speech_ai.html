@@ -98,6 +98,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Fase 7 — concluída (v7.6.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#b45309"></div>Fase 8 — concluída (v8.3.0)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#be185d"></div>Fase 9 — concluída (v9.3.0)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0891b2"></div>Fase 10 — concluída (v10.2.0)</div>
     </div>
 
     <div id="phases"></div>
@@ -436,9 +437,33 @@ const phases = [
       }
     ]
   }
+
+   ,{
+    id: 10, label: "Fase 10", title: "Spring AI + Ollama — análise com LLM local",
+    color: "#0891b2", badgeBg: "#083344", badgeColor: "#a5f3fc",
+    version: "v10.1.0–v10.2.0", taskCount: 2, done: true,
+    tasks: [
+      {
+        title: "10.1 — Domínio analysis/ + OllamaLanguageModelAdapter + endpoint",
+        desc: "Spring AI ChatClient + Ollama local + POST /{hash}/analysis",
+        tags: ["Spring AI", "Ollama", "LLM"],
+        done: true, version: "v10.1.0",
+        detail: "Novo domínio analysis/ hexagonal completo. LanguageModelPort como contrato — Ollama hoje, qualquer LLM amanhã. SummarizeTranscriptionUseCase: cache check → prompt → LLM → store → retorna. Controller busca texto no Redis existente via TranscriptionCachePort. GlobalExceptionHandler + AnalysisUnavailableException → 503.",
+        snippet: "// Trocar Ollama por OpenAI:\n@Primary\npublic class OpenAiLanguageModelAdapter implements LanguageModelPort {\n    public String generate(String prompt) {\n        // OpenAI ChatClient aqui\n    }\n}\n// Domínio e use case não mudam"
+      },
+      {
+        title: "10.2 — Cache Redis para resumos + audioHash na resposta",
+        desc: "RedisSummaryStoreAdapter (TTL 72h) + audioHash em TranscriptionResponse",
+        tags: ["Redis", "Cache", "audioHash"],
+        done: true, version: "v10.2.0",
+        detail: "RedisSummaryStoreAdapter implements SummaryStorePort — chave 'summary:{hash}', TTL 72h. RedisAnalysisConfig: bean RedisTemplate<String, SummaryResult> separado. TranscriptionResult + audioHash: use case já calcula o hash, custo zero incluir no result. TranscriptionResponse + audioHash: cliente recebe o hash para chamar /analysis diretamente.",
+        snippet: "// Fluxo completo:\n// 1. POST /api/transcriptions → { text, audioHash: 'a1b2...' }\n// 2. POST /api/transcriptions/a1b2.../analysis\n//    → 1ª vez: Ollama processa (~5-30s)\n//    → 2ª vez: Redis hit (~15ms, cached: true)"
+      }
+    ]
+  }
 ];
 
-let openPhases = new Set([9]);
+let openPhases = new Set([10]);
 let activeTask = null;
 
 function renderPhases() {

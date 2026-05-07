@@ -5,7 +5,7 @@
 <h1 align="center">🎙️ Speech-to-Text API</h1>
 
 <p align="center">
-  API de transcrição de áudio com Whisper e Spring Boot
+  API de transcrição de áudio com Whisper/Spring Boot e resumo via Spring AI
 </p>
 
 ![CI](https://github.com/erichiroshi/dio-speech-ai/actions/workflows/ci.yml/badge.svg)
@@ -58,9 +58,9 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 - [Autor](#autor)
 
 ---
-
+ 
 ## 🗺️ Roadmap
-
+ 
 **[Ver Roadmap completo — Fases 1 a 9](https://erichiroshi.github.io/dio-speech-ai/roadmap_dio_speech_ai.html)**
  
 | Fase | Versões | Status |
@@ -73,7 +73,8 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Fase 6 — Bean Validation | v6.x | ⏸️ Pendente — sem DTOs validáveis no momento |
 | Fase 7 — Arquitetura Hexagonal | v7.1.0 → v7.6.0 | ✅ Concluída |
 | Fase 8 — RabbitMQ | v8.1.0 → v8.3.0 | ✅ Concluída |
-| Fase 9 — Notificações | v9.1.0 - v9.3.0 | ✅ Concluída |
+| Fase 9 — Notificações | v9.1.0 → v9.3.0 | ✅ Concluída |
+| Fase 10 — Spring AI + Ollama | v10.1.0 → v10.2.0 | ✅ Concluída |
  
 ---
 
@@ -114,6 +115,8 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | Spring Mail | — | Notificações por e-mail (SMTP) |
 | GreenMail | 2.1.3 | Servidor SMTP embarcado nos testes |
 | MockWebServer | 5.3.2 | Simula Speaches, SMS e WhatsApp nos testes |
+| Spring AI | 2.0.0-M5 | ChatClient + Ollama integration |
+| Ollama | latest | LLM local offline — sem API key |
 | SpringDoc OpenAPI | 3.0.3 | Spec OAS 3.1 + Swagger UI |
 | Jacoco | 0.8.14 | Cobertura de testes (threshold 70%) |
 | SonarCloud | 7.2.3.7755 | Análise estática + Quality Gate |
@@ -121,9 +124,29 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 | SonarQube local | — | Análise estática no docker-compose.dev.yml |
 
 ---
-
+ 
+### POST /api/transcriptions/{audioHash}/analysis
+ 
+Gera um resumo da transcrição identificada pelo `audioHash` (retornado por `POST /api/transcriptions`).
+ 
+**Response 200 — gerado agora:**
+```json
+{ "audioHash": "a1b2c3...", "summary": "O áudio discute...", "model": "llama3.2:3b" }
+```
+ 
+**Response 200 — cache hit (~15ms):**
+```json
+{ "audioHash": "a1b2c3...", "summary": "O áudio discute...", "model": "llama3.2:3b", "cached": true }
+```
+ 
+**Response 404 — transcrição não encontrada no cache**
+ 
+**Response 503 — Ollama indisponível**
+ 
+---
+ 
 ## 🏗️ Arquitetura
-
+ 
 ```
 Cliente HTTP
   │  POST /api/transcriptions
@@ -140,10 +163,10 @@ TranscribeAudioUseCase  (application — implements TranscribeAudioPort)
   ├── WhisperAdapter → @Retry + @CircuitBreaker → speaches:8000
   ├── RedisTranscriptionCacheAdapter → Redis (TTL 24h)
   └── NoOpTranscriptionEventAdapter → log (RabbitMQ na Fase 8)
-
+ 
 shared/config/    MdcLoggingFilter · OpenApiConfig · WebClientConfig · RedisConfig
 shared/exception/ GlobalExceptionHandler (ProblemDetail RFC 9457)
-
+ 
 Infraestrutura (Docker network: backend)
   ├── speaches    :8000  — Whisper
   ├── redis       :6379  — Cache (TTL 24h)
@@ -151,7 +174,7 @@ Infraestrutura (Docker network: backend)
   ├── grafana     :3000  — Dashboards
   └── zipkin      :9411  — Tracing
 ```
-
+ 
 ---
 
 ## ⚙️ Pré-requisitos
@@ -338,9 +361,9 @@ docker exec -it redis redis-cli keys 'transcription:*'
 ```
 
 ---
-
+ 
 ## 🔧 Variáveis de ambiente
-
+ 
 | Variável | Padrão | Descrição |
 |---|---|---|
 | `WHISPER_BASE_URL` | `http://speaches:8000` | URL do Speaches |
@@ -365,7 +388,10 @@ docker exec -it redis redis-cli keys 'transcription:*'
 | `NOTIFICATION_SMS_API_KEY` | — | API key SMS (Twilio, Vonage...) |
 | `NOTIFICATION_WHATSAPP_BASE_URL` | `https://graph.facebook.com` | Meta Cloud API |
 | `NOTIFICATION_WHATSAPP_ACCESS_TOKEN` | — | Token de acesso WhatsApp |
-
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | URL do Ollama |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Modelo LLM local |
+| `CACHE_SUMMARY_TTL_HOURS` | `72` | TTL do cache de resumos |
+ 
 ---
 
 ## 🔀 Fluxo real de execução
@@ -373,9 +399,9 @@ docker exec -it redis redis-cli keys 'transcription:*'
   <img width="100%" src="images/mermaid-diagram.png" alt="mermaid-diagram">
 
 ---
-
+ 
 ## 📁 Estrutura do projeto
-
+ 
 ```
 src/main/java/com/example/diospeechai/
 ├── DioSpeechAiApplication.java
@@ -407,7 +433,19 @@ src/main/java/com/example/diospeechai/
 │   │   └── out/messaging/event/TranscriptionCompletedEvent.java
 │   ├── metrics/TranscriptionMetrics.java
 │   └── exception/
-└── notification/
+├── notification/
+│   └── ...
+└── analysis/
+    ├── domain/
+    │   ├── model/TranscriptionSummary.java
+    │   └── port/
+    │       ├── in/SummarizeTranscriptionPort.java
+    │       └── out/ LanguageModelPort · SummaryStorePort
+    ├── application/SummarizeTranscriptionUseCase.java
+    ├── infrastructure/
+    │   ├── ollama/OllamaLanguageModelAdapter.java   ← Spring AI ChatClient
+    │   └── cache/RedisSummaryStoreAdapter.java       ← TTL 72h
+    └── adapter/in/http/TranscriptionAnalysisController.java
     ├── domain/
     │   ├── model/ NotificationChannel · NotificationRequest
     │   └── port/NotificationPort.java   ← interface de cada canal
@@ -418,7 +456,7 @@ src/main/java/com/example/diospeechai/
         ├── sms/SmsNotificationAdapter.java      ← WebClient (Twilio, Vonage...)
         └── whatsapp/WhatsAppNotificationAdapter.java  ← Meta Cloud API
 ```
-
+ 
 ---
 
 ## ⚠️ Troubleshooting
