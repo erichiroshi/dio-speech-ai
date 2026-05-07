@@ -89,7 +89,37 @@ services:
       start_period: 30s
 
     networks:
-      - backend	  
+      - backend
+
+# ── Ollama (dev) ────────────────────────────────────────────────────
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    restart: unless-stopped
+
+    ports:
+      - "11434:11434"		# API REST do Ollama
+
+    volumes:
+      - ollama_data:/root/.ollama		 # modelos persistidos entre restarts
+
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+  # Se tiver GPU NVIDIA, adicionar:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+    runtime: nvidia
+
+    # Faz o pull do modelo e depois inicia o servidor
+    entrypoint: ["/usr/bin/sh", "-c"]
+    command: ["ollama serve & sleep 5 && ollama pull llama3.2:1b && wait"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # ── Prometheus ───────────────────────────────────────────────────────────────
   # v2.1.0 — coleta métricas da API via /actuator/prometheus a cada 10s
@@ -201,6 +231,7 @@ volumes:
   sonarqube_extensions:
   sonarqube_temp:
   rabbitmq_data:
+  ollama_data:
 
 networks:
   backend:

@@ -1,5 +1,6 @@
 package com.example.diospeechai.notification.infrastructure.email;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -30,6 +31,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(
+    name = "notification.email.enabled",
+    havingValue = "true",
+    matchIfMissing = true
+)
 @RequiredArgsConstructor
 @EnableConfigurationProperties(EmailProperties.class)
 public class EmailNotificationAdapter implements NotificationPort {

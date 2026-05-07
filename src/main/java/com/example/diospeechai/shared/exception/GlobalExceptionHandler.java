@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.example.diospeechai.analysis.exception.AnalysisUnavailableException;
 import com.example.diospeechai.transcription.exception.ServiceUnavailableException;
 import com.example.diospeechai.transcription.exception.TranscriptionException;
 
@@ -61,6 +62,18 @@ public class GlobalExceptionHandler {
         		"service-unavailable"
         		);
     }
+    
+    @ExceptionHandler(AnalysisUnavailableException.class)
+    public ProblemDetail handleAnalysisUnavailable(AnalysisUnavailableException ex) {
+    	
+        log.warn("Serviço de análise indisponível | message={}", ex.getMessage());
+        
+        return buildProblemDetail(
+        		HttpStatus.SERVICE_UNAVAILABLE, 
+        		"Análise Indisponível",
+                ex.getMessage(), 
+                "analysis-unavailable");
+    }    
     
     // ── Validação de entrada ──────────────────────────────────────────────────────────────
     

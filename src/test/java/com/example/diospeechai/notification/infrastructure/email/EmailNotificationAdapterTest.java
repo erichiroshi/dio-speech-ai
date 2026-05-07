@@ -31,6 +31,7 @@ import jakarta.mail.internet.MimeMessage;
 @SpringBootTest
 @TestPropertySource(properties = {
     "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration",
+    "notification.email.enabled=true",
     "notification.email.from=test@diospeechai.com",
     "notification.channel=EMAIL",
     "notification.default-recipient=recipient@example.com"

@@ -48,6 +48,18 @@ spring:
           multiplier: 2.0              # backoff: 1s → 2s → 4s
           max-interval: 10000ms
 
+# ── Ollama LLM v10.1.0 ────────────────────────────────────────────────────────
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:llama3.2:1b}
+
+analysis:
+  ollama:
+    model: ${OLLAMA_MODEL:llama3.2:1b}
+
 whisper:
   base-url: ${WHISPER_BASE_URL:http://localhost:8000}
   model: ${WHISPER_MODEL:Systran/faster-whisper-small}
@@ -73,6 +85,8 @@ management:
   health:
     circuitbreakers:
       enabled: true
+    mail:
+      enabled: false
     
   # Habilita histogramas de percentil para latência HTTP
   # Permite queries p50, p95, p99 no Prometheus/Grafana
@@ -105,6 +119,7 @@ notification:
   channel:           ${NOTIFICATION_CHANNEL:NO_OP}   # EMAIL | SMS | WHATSAPP
 
   email:
+    enabled: false
     from: ${NOTIFICATION_EMAIL_FROM:noreply@diospeechai.com}
 
   sms:
@@ -112,6 +127,7 @@ notification:
     sendPath: ${NOTIFICATION_SMS_SEND_PATH:/v1/sms}
     apiKey:   ${NOTIFICATION_SMS_API_KEY:}
     senderId: ${NOTIFICATION_SMS_SENDER_ID:DioSpeech}
+
   whatsapp:
     base-url:    ${NOTIFICATION_WHATSAPP_BASE_URL:https://graph.facebook.com}
     sendPath:    ${NOTIFICATION_WHATSAPP_SEND_PATH:/v19.0/PHONE_NUMBER_ID/messages}

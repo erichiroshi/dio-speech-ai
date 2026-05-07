@@ -7,8 +7,8 @@ plugins {
 }
 
 group = 'com.example'
-version = '9.3.0'
-description = 'Serviço de transcrição de áudio com notificações multicanal'
+version = '10.1.0'
+description = 'Serviço de transcrição de áudio com análise inteligente via LLM'
 
 java {
 	toolchain {
@@ -33,6 +33,7 @@ ext{
    	testcontainersVersion = '2.0.4'
    	okhttpVersion         = '5.3.2'
 	springdocVersion      = '3.0.3'
+	springAiVersion       = '2.0.0-M5'
 	
 	coverageExclusions = [
 	'**/config/**',
@@ -48,6 +49,9 @@ ext{
 	'**/notification/infrastructure/whatsapp/WhatsAppProperties*',
 	'**/notification/domain/model/NotificationChannel*',
 	'**/notification/domain/model/NotificationRequest*',
+	'**/analysis/infrastructure/NoOpSummaryStoreAdapter*',  // placeholder sem lógica
+	'**/analysis/infrastructure/ollama/OllamaProperties*',  // só config
+	'**/analysis/domain/model/**',                          // records sem lógica
 	]
 }
 
@@ -93,7 +97,11 @@ dependencies {
 	
 	// ── E-mail v9.2.0 ────────────────────────────────────────────────────────
     implementation 'org.springframework.boot:spring-boot-starter-mail'
- 
+
+	// ── Spring AI v10.1.0 ─────────────────────────────────────────────────────────────
+	implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
+	implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+
 	// ── Lombok ─────────────────────────────────────────────────────────────
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -119,7 +127,11 @@ dependencies {
     // GreenMail — servidor SMTP embarcado para testes (não usa conta real)
     testImplementation 'com.icegreen:greenmail-spring:2.1.3'
     testImplementation 'com.icegreen:greenmail:2.1.3'
+    // Ollama AI — testes
+	implementation 'org.testcontainers:ollama:1.21.4'
 }
+
+
 
 // ── Jacoco v5.1.0 ────────────────────────────────────────────────────────────
  

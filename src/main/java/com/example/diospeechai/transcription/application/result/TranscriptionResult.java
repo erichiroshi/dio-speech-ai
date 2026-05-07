@@ -17,15 +17,16 @@ package com.example.diospeechai.transcription.application.result;
 public record TranscriptionResult(
         String text,
         long fileSizeBytes,
+        String transcriptionHash,
         boolean cached
 ) {
     /** Construtor de conveniência para resultado de cache miss (processado pelo Whisper). */
-    public TranscriptionResult(String text, long fileSizeBytes) {
-        this(text, fileSizeBytes, false);
+    public TranscriptionResult(String text, long fileSizeBytes, String transcriptionHash) {
+        this(text, fileSizeBytes, transcriptionHash, false);
     }
 
     /** Retorna uma cópia marcada como vinda do cache. */
     public TranscriptionResult asCached() {
-        return new TranscriptionResult(text, fileSizeBytes, true);
+        return new TranscriptionResult(text, fileSizeBytes, transcriptionHash, true);
     }
 }

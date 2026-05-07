@@ -106,6 +106,39 @@ services:
     networks:
       - backend
 
+  # ── Ollama (dev) ────────────────────────────────────────────────────
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    restart: unless-stopped
+
+    ports:
+      - "11434:11434"		# API REST do Ollama
+
+    volumes:
+      - ollama_data:/root/.ollama		 # modelos persistidos entre restarts
+
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      # Se tiver GPU NVIDIA, adicionar:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+    runtime: nvidia
+
+    # Faz o pull do modelo e depois inicia o servidor
+    entrypoint: ["/usr/bin/sh", "-c"]
+    command: ["ollama serve & sleep 5 && ollama pull llama3.2:1b && wait"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    networks:
+      - backend
+
   # ── API Spring Boot ──────────────────────────────────────────────────────────
   dio-speaches-ai:
     container_name: dio-speaches-ai
@@ -131,6 +164,8 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: admin
       RABBITMQ_PASS: admin
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.2:1b
 
     depends_on:
       speaches:
@@ -138,6 +173,8 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
 
     healthcheck:
@@ -246,6 +283,7 @@ volumes:
   redis_data:
   grafana_data:
   rabbitmq_data:
+  ollama_data:
 
 networks:
   backend:

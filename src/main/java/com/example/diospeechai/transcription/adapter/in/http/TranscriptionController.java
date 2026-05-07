@@ -66,7 +66,7 @@ public class TranscriptionController implements TranscriptionControllerDocumenta
 
     private TranscriptionResponse toResponse(TranscriptionResult result) {
         return result.cached()
-                ? new TranscriptionResponse(result.text(), result.fileSizeBytes(), true)
-                : new TranscriptionResponse(result.text(), result.fileSizeBytes());
+                ? new TranscriptionResponse(result.text(), result.fileSizeBytes(), result.transcriptionHash(), true)
+                : new TranscriptionResponse(result.text(), result.fileSizeBytes(), result.transcriptionHash());
     }
 }

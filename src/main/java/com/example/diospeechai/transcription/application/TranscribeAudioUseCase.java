@@ -81,8 +81,10 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 
 			// ── Transcrição ───────────────────────────────────────────────────
 			String text = metrics.recordWhisperCall(() -> speechPort.transcribe(command.audioBytes()));
+			
+			log.warn("hash do áudio transcrito: {}", audioHash); // log do hash para debug e monitoramento
 
-			TranscriptionResult result = new TranscriptionResult(text, command.fileSizeBytes());
+			TranscriptionResult result = new TranscriptionResult(text, command.fileSizeBytes(), audioHash);
 
 			// ── Store cache ───────────────────────────────────────────────────
 			cachePort.put(audioHash, result);

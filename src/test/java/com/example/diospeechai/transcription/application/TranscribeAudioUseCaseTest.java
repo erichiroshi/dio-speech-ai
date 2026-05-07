@@ -51,6 +51,7 @@ class TranscribeAudioUseCaseTest {
     private static final String FILENAME    = "audio.wav";
     private static final String CONTENT_TYPE    = "audio/wav";
     private static final long   SIZE        = AUDIO_BYTES.length;
+    private static final String TRANSCRIPTION_HASH        = "ABC123..."; // hash fictício para testes
 
     private TranscribeCommand command;
 
@@ -67,7 +68,7 @@ class TranscribeAudioUseCaseTest {
     @DisplayName("Cache hit: deve retornar resultado cacheado sem chamar speechPort")
     void shouldReturnCachedResultOnCacheHit() {
         // Arrange
-        var cached = new TranscriptionResult("texto cacheado", SIZE, false);
+        var cached = new TranscriptionResult("texto cacheado", SIZE, TRANSCRIPTION_HASH, false);
         when(cachePort.get(anyString())).thenReturn(Optional.of(cached));
 
         // Act
@@ -124,7 +125,7 @@ class TranscribeAudioUseCaseTest {
         .thenAnswer(inv -> inv.<Supplier<?>>getArgument(0).get());
         when(cachePort.get(anyString()))
                 .thenReturn(Optional.empty())           // 1ª chamada — miss
-                .thenReturn(Optional.of(new TranscriptionResult("texto", SIZE, false))); // 2ª — hit
+                .thenReturn(Optional.of(new TranscriptionResult("texto", SIZE, TRANSCRIPTION_HASH,false))); // 2ª — hit
         when(speechPort.transcribe(any())).thenReturn("texto");
 
         // Act
@@ -167,7 +168,7 @@ class TranscribeAudioUseCaseTest {
     void shouldAlwaysRecordFileSize() {
         // Arrange — cache hit
         when(cachePort.get(anyString()))
-                .thenReturn(Optional.of(new TranscriptionResult("texto", SIZE, false)));
+                .thenReturn(Optional.of(new TranscriptionResult("texto", SIZE, TRANSCRIPTION_HASH, false)));
 
         // Act
         useCase.transcribe(command);

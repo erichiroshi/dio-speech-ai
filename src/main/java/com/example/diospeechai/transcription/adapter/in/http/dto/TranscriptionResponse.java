@@ -25,13 +25,17 @@ public record TranscriptionResponse(
                 example = "461842")
         Long fileSizeBytes,
 
+        @Schema(description = "Hash do arquivo de áudio transcrito, usado para cache Redis",
+        example = "3a14c503...")
+        String trasncritionHash,
+
         @Schema(description = "true quando servido do cache Redis. Ausente em cache miss.",
                 example = "true", nullable = true)
         Boolean cached
 
 ) {
     /** Construtor de conveniência para cache miss. */
-    public TranscriptionResponse(String text, Long fileSizeBytes) {
-        this(text, fileSizeBytes, null);
+    public TranscriptionResponse(String text, Long fileSizeBytes, String trasncritionHash) {
+        this(text, fileSizeBytes, trasncritionHash, null);
     }
 }

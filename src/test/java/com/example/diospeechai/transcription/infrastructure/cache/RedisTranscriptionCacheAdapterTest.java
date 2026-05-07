@@ -45,7 +45,7 @@ class RedisTranscriptionCacheAdapterTest {
     private static final String HASH   = "abc123hash";
     private static final String KEY    = "transcription:" + HASH;
     private static final TranscriptionResult RESULT =
-            new TranscriptionResult("texto transcrito", 1000L);
+            new TranscriptionResult("texto transcrito", 1000L, HASH);
 
     @BeforeEach
     void setUp() {

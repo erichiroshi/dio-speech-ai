@@ -63,5 +63,15 @@
     "name": "notification.whatsapp.accessToken",
     "type": "java.lang.String",
     "description": "A description for 'notification.whatsapp.accessToken'"
+  },
+  {
+    "name": "analysis.ollama.model",
+    "type": "java.lang.String",
+    "description": "A description for 'analysis.ollama.model'"
+  },
+  {
+    "name": "notification.email.enabled",
+    "type": "java.lang.String",
+    "description": "A description for 'notification.email.enabled'"
   }
 ]}
