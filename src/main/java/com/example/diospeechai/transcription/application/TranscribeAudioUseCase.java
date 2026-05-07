@@ -4,7 +4,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
@@ -23,20 +22,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Caso de uso: transcrever um arquivo de áudio.
+ * Caso de uso: transcrever arquivo de áudio.
  *
- * <p>Orquestra os ports sem conhecer nenhuma tecnologia concreta:
- * <ol>
- *   <li>Calcula SHA-256 dos bytes do áudio</li>
- *   <li>{@link TranscriptionCachePort#get} — HIT: retorna com {@code cached=true}</li>
- *   <li>MISS: {@link SpeechToTextPort#transcribe} — chama o serviço de IA</li>
- *   <li>{@link TranscriptionCachePort#put} — armazena para próximas requisições</li>
- *   <li>{@link TranscriptionEventPort#publish} — notifica outros serviços</li>
- *   <li>Métricas e logs</li>
- * </ol>
- *
- * <p>Esta classe não sabe que existe WebClient, Redis, RabbitMQ ou Spring Security.
- * Toda tecnologia fica nos adapters que implementam os ports.
+ * <p>
+ * v10.2.0: {@code audioHash} incluído no {@link TranscriptionResult} para que o
+ * controller passe o hash na resposta HTTP, permitindo ao cliente chamar
+ * {@code POST /api/transcriptions/{hash}/analysis}.
  */
 @Slf4j
 @Service
@@ -47,19 +38,11 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 	private final TranscriptionCachePort cachePort;
 	private final TranscriptionEventPort eventPort;
 	private final TranscriptionMetrics metrics;
-	
-    private static final Set<String> ALLOWED_TYPES = Set.of(
-    	    "audio/wav",
-    	    "audio/mpeg",
-    	    "audio/wave",
-            "audio/x-wav"
-    	);
 
 	@Override
 	public TranscriptionResult transcribe(TranscribeCommand command) {
+		validate(command);
 
-        validate(command);
-		
 		String audioHash = sha256(command.audioBytes());
 
 		MDC.put("fileName", command.filename());
@@ -69,7 +52,7 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 		metrics.recordFileSize(command.fileSizeBytes());
 
 		try {
-			// ── Cache check ───────────────────────────────────────────────────
+			// Cache check
 			Optional<TranscriptionResult> cached = cachePort.get(audioHash);
 			if (cached.isPresent()) {
 				metrics.recordCacheHit();
@@ -79,21 +62,17 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 
 			metrics.recordCacheMiss();
 
-			// ── Transcrição ───────────────────────────────────────────────────
+			// Transcrição
 			String text = metrics.recordWhisperCall(() -> speechPort.transcribe(command.audioBytes()));
-			
-			log.warn("hash do áudio transcrito: {}", audioHash); // log do hash para debug e monitoramento
 
+			// v10.2.0: passa audioHash no result
 			TranscriptionResult result = new TranscriptionResult(text, command.fileSizeBytes(), audioHash);
 
-			// ── Store cache ───────────────────────────────────────────────────
 			cachePort.put(audioHash, result);
-
-			// ── Evento ────────────────────────────────────────────────────────
 			eventPort.publish(Transcription.of(audioHash, text, command.fileSizeBytes()));
 
 			metrics.recordSuccess();
-			log.info("Transcrição concluída | chars={} | size={}bytes", text.length(), command.fileSizeBytes());
+			log.info("Transcrição concluída | chars={} | hash={}", text.length(), audioHash);
 
 			return result;
 
@@ -107,29 +86,17 @@ public class TranscribeAudioUseCase implements TranscribeAudioPort {
 			MDC.remove("whisperModel");
 		}
 	}
-	
-	// ── Validação ─────────────────────────────────────────────────────────────
 
-		private void validate(TranscribeCommand file) {
-
-			if (file == null) {
-				throw new TranscriptionException("Arquivo vazio ou ausente");
-			}
-			
-			String contentType = file.contentType();
-
-			if (contentType == null) {
-				throw new TranscriptionException("Content-Type do arquivo não informado");
-			}
-
-			if (!ALLOWED_TYPES.contains(contentType.toLowerCase())) {
-				throw new TranscriptionException(
-						"Tipo de arquivo inválido: '%s'. Tipos aceitos: %s"
-							.formatted(contentType, ALLOWED_TYPES));
-			}
-		}
-
-	// ── Helper ────────────────────────────────────────────────────────────────
+	private void validate(TranscribeCommand command) {
+		if (command == null || command.audioBytes() == null || command.audioBytes().length == 0)
+			throw new TranscriptionException("Arquivo vazio ou ausente");
+		if (command.contentType() == null)
+			throw new TranscriptionException("Content-Type do arquivo não informado");
+		var allowed = java.util.Set.of("audio/wav", "audio/wave", "audio/x-wav", "audio/mpeg");
+		if (!allowed.contains(command.contentType().toLowerCase()))
+			throw new TranscriptionException(
+					"Tipo de arquivo inválido: '%s'. Tipos aceitos: %s".formatted(command.contentType(), allowed));
+	}
 
 	private String sha256(byte[] bytes) {
 		try {

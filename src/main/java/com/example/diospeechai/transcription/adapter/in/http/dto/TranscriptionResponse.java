@@ -7,11 +7,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * DTO de resposta HTTP da API de transcrição.
  *
- * <p>v7.5.0: movido de {@code transcription/dto/} para {@code adapter/in/http/dto/}.
- * É uma representação HTTP do resultado — não faz parte do domínio.
- *
- * <p>{@code @JsonInclude(NON_NULL)} evita que {@code "cached": null} apareça
- * nas respostas de cache miss — o campo só aparece quando {@code true}.
+ * <p>v10.2.0: campo {@code audioHash} adicionado para permitir que o cliente
+ * use o hash diretamente em {@code POST /api/transcriptions/{audioHash}/analysis}
+ * sem precisar calculá-lo independentemente.
  */
 @Schema(description = "Resultado da transcrição de áudio")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -25,17 +23,22 @@ public record TranscriptionResponse(
                 example = "461842")
         Long fileSizeBytes,
 
-        @Schema(description = "Hash do arquivo de áudio transcrito, usado para cache Redis",
-        example = "3a14c503...")
-        String trasncritionHash,
+        @Schema(description = "SHA-256 do conteúdo do áudio. Use para chamar /analysis.",
+                example = "a1b2c3d4e5f6...")
+        String audioHash,
 
         @Schema(description = "true quando servido do cache Redis. Ausente em cache miss.",
-                example = "true", nullable = true)
+                nullable = true)
         Boolean cached
 
 ) {
-    /** Construtor de conveniência para cache miss. */
-    public TranscriptionResponse(String text, Long fileSizeBytes, String trasncritionHash) {
-        this(text, fileSizeBytes, trasncritionHash, null);
+    /** Cache miss sem audioHash (compatibilidade retroativa). */
+    public TranscriptionResponse(String text, Long fileSizeBytes) {
+        this(text, fileSizeBytes, null, null);
+    }
+
+    /** Cache miss com audioHash. */
+    public TranscriptionResponse(String text, Long fileSizeBytes, String audioHash) {
+        this(text, fileSizeBytes, audioHash, null);
     }
 }

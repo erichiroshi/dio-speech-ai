@@ -1,32 +1,29 @@
 package com.example.diospeechai.transcription.application.result;
 
 /**
- * Objeto de saída do caso de uso {@code TranscribeAudioUseCase}.
+ * Output do caso de uso de transcrição.
  *
- * <p>Carrega o resultado sem acoplamento com {@code ResponseEntity}
- * (HTTP) nem com eventos RabbitMQ. O adapter converte este resultado
- * para sua representação específica de saída.
- *
- * <p>{@code cached} indica se o resultado veio do Redis (true) ou
- * foi processado agora pelo Whisper (false).
+ * <p>v10.2.0: {@code audioHash} adicionado para que o controller possa
+ * incluí-lo na resposta HTTP sem precisar recalcular o SHA-256.
  *
  * @param text          texto transcrito
- * @param fileSizeBytes tamanho do arquivo original em bytes
- * @param cached        true se servido do cache, false se processado agora
+ * @param fileSizeBytes tamanho do arquivo em bytes
+ * @param audioHash     SHA-256 hex do conteúdo do áudio
+ * @param cached        true se veio do cache, false se processado pelo Whisper
  */
 public record TranscriptionResult(
-        String text,
-        long fileSizeBytes,
-        String transcriptionHash,
+        String  text,
+        long    fileSizeBytes,
+        String  audioHash,
         boolean cached
 ) {
-    /** Construtor de conveniência para resultado de cache miss (processado pelo Whisper). */
-    public TranscriptionResult(String text, long fileSizeBytes, String transcriptionHash) {
-        this(text, fileSizeBytes, transcriptionHash, false);
+    /** Cache miss — hash calculado pelo use case. */
+    public TranscriptionResult(String text, long fileSizeBytes, String audioHash) {
+        this(text, fileSizeBytes, audioHash, false);
     }
 
-    /** Retorna uma cópia marcada como vinda do cache. */
+    /** Retorna cópia marcada como vinda do cache. */
     public TranscriptionResult asCached() {
-        return new TranscriptionResult(text, fileSizeBytes, transcriptionHash, true);
+        return new TranscriptionResult(text, fileSizeBytes, audioHash, true);
     }
 }

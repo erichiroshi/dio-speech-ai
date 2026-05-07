@@ -19,15 +19,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Adapter de entrada HTTP — POST /api/transcriptions.
  *
- * <p>Responsabilidades exclusivas deste adapter:
- * <ol>
- *   <li>Extrair bytes e metadados do {@code MultipartFile}</li>
- *   <li>Converter para {@code TranscribeCommand}</li>
- *   <li>Chamar {@code TranscribeAudioPort} (interface do caso de uso)</li>
- *   <li>Converter {@code TranscriptionResult} para {@code TranscriptionResponse}</li>
- * </ol>
- *
- * <p>O controller não conhece Redis, Whisper, SHA-256 nem RabbitMQ.
+ * <p>v10.2.0: {@code audioHash} incluído na resposta para que o cliente
+ * possa chamar {@code POST /api/transcriptions/{audioHash}/analysis}
+ * diretamente sem calcular o hash.
  */
 @RestController
 @RequestMapping("/api/transcriptions")
@@ -54,8 +48,6 @@ public class TranscriptionController implements TranscriptionControllerDocumenta
         return ResponseEntity.ok(toResponse(result));
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
-
     private byte[] extractBytes(MultipartFile file) {
         try {
             return file.getBytes();
@@ -65,8 +57,14 @@ public class TranscriptionController implements TranscriptionControllerDocumenta
     }
 
     private TranscriptionResponse toResponse(TranscriptionResult result) {
-        return result.cached()
-                ? new TranscriptionResponse(result.text(), result.fileSizeBytes(), result.transcriptionHash(), true)
-                : new TranscriptionResponse(result.text(), result.fileSizeBytes(), result.transcriptionHash());
+        if (result.cached()) {
+            // Em cache hit o audioHash já está no result
+            return new TranscriptionResponse(
+                    result.text(), result.fileSizeBytes(),
+                    result.audioHash(), true);
+        }
+        return new TranscriptionResponse(
+                result.text(), result.fileSizeBytes(),
+                result.audioHash());
     }
 }

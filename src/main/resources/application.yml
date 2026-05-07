@@ -85,8 +85,6 @@ management:
   health:
     circuitbreakers:
       enabled: true
-    mail:
-      enabled: false
     
   # Habilita histogramas de percentil para latência HTTP
   # Permite queries p50, p95, p99 no Prometheus/Grafana
