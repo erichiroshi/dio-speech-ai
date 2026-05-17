@@ -78,10 +78,12 @@ projeto, como rodar, endpoints, variáveis de ambiente, configuração.
 
 ## Fase 6 — Bean Validation (v6.1.0 a v6.2.0)
 
-### O que valida
+⚠️ **NÃO IMPLEMENTADA**
+
+### O que seria validado
 
 Os DTOs de entrada do projeto não tinham validação declarativa além
-do `@NotBlank` no `username` do `TokenRequest`. A Fase 6 estende
+do `@NotBlank` no `username` do `TokenRequest`. A Fase 6 estenderia
 validação para todos os pontos de entrada.
 
 **`TranscribeCommand`** (Fase 7 em diante): `@NotNull` nos bytes,
@@ -89,18 +91,32 @@ validação para todos os pontos de entrada.
 
 **Endpoint HTTP atual**: o `MultipartFile` já tem validação no
 `TranscriptionService.validate()` via lógica imperativa. A Fase 6
-move parte dessa validação para constraints declarativas onde faz sentido,
+moveria parte dessa validação para constraints declarativas onde faz sentido,
 mantendo validação de Content-Type no service (lógica de negócio).
 
 ### Padronização do GlobalExceptionHandler
 
 O handler tinha mensagens em dois idiomas — `"Validation Error"` e
 `"You do not have permission"` em inglês, todo o resto em português.
-Esta fase padroniza para português.
+Esta fase padronizaria para português.
 
 **Trade-off:** padronizar em inglês seria mais "enterprise" e
 internacionalizável. Mas o projeto é ptBR, o time é ptBR, e
 consistência interna vale mais do que preparação prematura para i18n.
+
+### Motivo da não implementação
+
+A Fase 6 não foi implementada porque, até a versão atual (v10.2.0), não há
+DTOs com múltiplos campos que se beneficiariam da validação bean validation.
+Os objetos de entrada são simples (apenas um arquivo de upload) e a validação
+de conteúdo é feita por lógica de negócio no service.
+
+### Condição para implementação futura
+
+A Fase 6 será implementada quando o sistema introduzir DTOs complexos com
+múltiplos campos que requerem validação declarativa (como endpoints com
+corpo JSON contendo vários campos que precisam de validação como tamanho,
+formato, padrão, etc.).
 
 ---
 

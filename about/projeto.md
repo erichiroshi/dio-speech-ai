@@ -2,19 +2,26 @@
 
 ## O que é o projeto
 
-API REST de transcrição de áudio desenvolvida para o desafio **DIO × Globant — Java & Spring Boot AI Developer**. O objetivo técnico era demonstrar integração com IA generativa a partir de uma stack Java moderna, evoluindo em três fases da funcionalidade básica até uma API pronta para produção.
+API REST de transcrição de áudio desenvolvida para o desafio **DIO × Globant — Java & Spring Boot AI Developer**. O objetivo técnico era demonstrar integração com IA generativa a partir de uma stack Java moderna, evoluindo em dez fases da funcionalidade básica até uma API pronta para produção.
 
 O serviço recebe um arquivo de áudio via `POST /api/transcriptions`, envia para o modelo Whisper (via Speaches), e retorna a transcrição em texto. A partir da Fase 2, respostas já transcritas são servidas do cache em vez de processar novamente.
 
 ---
 
-## As três fases
+## As dez fases
 
 | Fase | Versões | Foco |
 |---|---|---|
 | Fase 1 | v1.0.0 | API funcional: transcrição síncrona, Docker, tratamento de erros |
 | Fase 2 | v2.1.0 → v2.7.0 | Maturidade: observabilidade completa + cache inteligente |
-| Fase 3 | v3.1.0 → v3.5.0 | Produção: resiliência a falhas + segurança + testes |
+| Fase 3 | v3.1.0 → v3.5.0 | Resiliência: CircuitBreaker, Retry (JWT removido na v5.1.0) |
+| Fase 4 | v4.1.0 | Documentação: Swagger UI, README atualizado |
+| Fase 5 | v5.1.0 → v5.3.0 | CI/CD: GitHub Actions, Docker automatizado |
+| Fase 6 | v6.x | Pendente: Bean Validation (aguardando DTOs validáveis) |
+| Fase 7 | v7.1.0 → v7.6.0 | Arquitetura Hexagonal: ports, adapters, domain pur |
+| Fase 8 | v8.1.0 → v8.3.0 | Mensageria: RabbitMQ, DLQ, assíncrono |
+| Fase 9 | v9.1.0 → v9.3.0 | Notificações: Email, SMS, WhatsApp |
+| Fase 10 | v10.1.0 → v10.2.0 | IA: Spring AI + Ollama para resumos |
 
 ---
 
@@ -23,11 +30,9 @@ O serviço recebe um arquivo de áudio via `POST /api/transcriptions`, envia par
 ```
 Cliente HTTP
   │  POST /api/transcriptions
-  │  Authorization: Bearer <JWT>
   ▼
 Spring Boot API  :8080
   │
-  ├── SecurityFilterChain (JWT stateless)
   ├── MdcLoggingFilter (requestId + traceId nos logs)
   │
   ├── TranscriptionService
@@ -107,11 +112,9 @@ A cadeia `@Retry → @CircuitBreaker` protege o `SpeechToTextClient`:
 
 As métricas do Resilience4j são expostas automaticamente via Micrometer — nenhum código adicional.
 
-### Spring Security + JWT (Nimbus)
+### Autenticação (descontinuada)
 
-Autenticação stateless com HMAC-SHA256. Nimbus JOSE+JWT foi escolhido pela API clara e por já ser dependência transitiva do Spring Security.
-
-A implementação atual usa um secret simétrico (HS256) adequado para aplicações monolíticas. Para sistemas distribuídos onde múltiplos serviços precisam validar tokens, o próximo passo seria RS256 (assimétrico).
+⚠️ JWT foi descontinuado na versão 5.1.0 por questões de simplicidade e segurança. Todas as rotas são agora públicas, sem necessidade de autenticação.
 
 ### Testcontainers + MockWebServer
 
@@ -124,21 +127,20 @@ Testes de integração com infraestrutura real (Redis) e Speaches simulado. Test
 ### Cache miss (primeira vez com aquele áudio)
 
 ```
-1. Cliente envia POST /api/transcriptions + Bearer token
-2. JwtAuthFilter valida o token → popula SecurityContext
-3. MdcLoggingFilter gera requestId → MDC
-4. TranscriptionController recebe o arquivo
-5. TranscriptionService valida (tipo, tamanho)
-6. TranscriptionService calcula SHA-256 do arquivo
-7. CacheService busca no Redis → MISS
-8. TranscriptionMetrics.recordCacheMiss()
-9. SpeechToTextClient.transcribe() — dentro do Timer Micrometer
+1. Cliente envia POST /api/transcriptions
+2. MdcLoggingFilter gera requestId → MDC
+3. TranscriptionController recebe o arquivo
+4. TranscriptionService valida (tipo, tamanho)
+5. TranscriptionService calcula SHA-256 do arquivo
+6. CacheService busca no Redis → MISS
+7. TranscriptionMetrics.recordCacheMiss()
+8. SpeechToTextClient.transcribe() — dentro do Timer Micrometer
      @Retry → @CircuitBreaker → WebClient → Speaches → Whisper
-10. TranscriptionMetrics.recordWhisperCall() registra duração
-11. CacheService armazena no Redis com TTL 24h
-12. TranscriptionMetrics.recordSuccess()
-13. Retorna TranscriptionResponse { text, fileSizeBytes }
-14. Log JSON emitido com requestId, fileName, fileSizeBytes, whisperModel, traceId
+9. TranscriptionMetrics.recordWhisperCall() registra duração
+10. CacheService armazena no Redis com TTL 24h
+11. TranscriptionMetrics.recordSuccess()
+12. Retorna TranscriptionResponse { text, fileSizeBytes }
+13. Log JSON emitido com requestId, fileName, fileSizeBytes, whisperModel, traceId
 ```
 
 ### Cache hit (mesmo áudio de novo)
@@ -201,13 +203,8 @@ docker compose up -d
 # Baixar modelo Whisper (primeira vez)
 uvx speaches-cli model download Systran/faster-whisper-small
 
-# Obter token e transcrever
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"user","password":"any"}' | jq -r .token)
-
+# Transcrever
 curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
   -F "file=@audio.wav;type=audio/wav" | jq .
 ```
 

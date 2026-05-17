@@ -182,6 +182,8 @@ Para receber o evento apos cada transcricao:
 
 ---
 
+> ⚠️ Nota: Autenticação JWT foi descontinuada na versão 5.1.0 por questões de simplicidade e segurança. Todas as rotas são agora públicas, sem necessidade de autenticação.
+
 ## Variaveis de ambiente
 
 | Variavel | Padrao | Descricao |

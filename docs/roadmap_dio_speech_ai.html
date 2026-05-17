@@ -193,7 +193,7 @@ const phases = [
     ]
   },
   {
-    id: 3, label: "Fase 3", title: "Resiliência + Segurança (JWT)",
+    id: 3, label: "Fase 3", title: "Resiliência: CircuitBreaker, Retry (JWT removido na v5.1.0)",
     color: "#7F77DD", badgeBg: "#1a1640", badgeColor: "#a5b4fc",
     version: null, taskCount: 5, done: true,
     version: "v3.5.0",
@@ -226,21 +226,21 @@ const phases = [
         snippet: "# Prometheus\nresilience4j_circuitbreaker_state{name=\"whisper\"}\nrate(resilience4j_circuitbreaker_calls_total{name=\"whisper\",kind=\"failed\"}[1m])"
       },
       {
-        title: "3.4 — Spring Security + JWT",
-        desc: "Filtro JWT stateless — /api/transcriptions exige ROLE_USER",
-        tags: ["Spring Security", "JWT", "Stateless"],
+        title: "3.4 — JWT (⚠️ removido na v5.1.0)",
+        desc: "Remoção da autenticação JWT por questões de simplicidade e segurança",
+        tags: ["JWT", "Remoção"],
         done: true,
         version: "v3.4.0",
-        detail: "spring-boot-starter-security + nimbus-jose-jwt. JwtAuthFilter extends OncePerRequestFilter. SecurityFilterChain: SESSION=STATELESS, /actuator/health e /auth/token públicos. Endpoint POST /auth/token (dev) gera token com sub, roles, exp.",
-        snippet: "@Bean SecurityFilterChain chain(HttpSecurity http) {\n  return http\n    .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))\n    .authorizeHttpRequests(a -> a\n      .requestMatchers(\"/actuator/health\",\"/auth/token\").permitAll()\n      .anyRequest().authenticated())\n    .addFilterBefore(jwtFilter, ...)\n    .csrf(AbstractHttpConfigurer::disable)\n    .build();\n}"
+        detail: "A autenticação JWT foi implementada na v3.4.0 mas removida na v5.1.0 pois não trazia valor agregado ao projeto e adicionava complexidade desnecessária. Todas as rotas são agora públicas, sem necessidade de autenticação. O endpoint POST /auth/token foi removido completamente.",
+        snippet: "// Nenhum código de autenticação JWT permanece no código-fonte\nenv.NECESSITA_DE_AUTENTICACAO = false;"
       },
       {
         title: "3.5 — Testes de integração",
-        desc: "Testcontainers: cache hit/miss, CB open/close, JWT válido/inválido",
+        desc: "Testcontainers: cache hit/miss, CB open/close (cenários JWT removidos)",
         tags: ["JUnit 5", "Testcontainers", "SpringBootTest"],
         done: true,
         version: "v3.5.0",
-        detail: "Testcontainers para Redis e Zipkin. Cenários: cache hit retorna cached=true; CB abre após N falhas → 503; retry reconecta na 2ª tentativa; JWT ausente → 401; JWT expirado → 401; JWT válido → 200.",
+        detail: "Testcontainers para Redis e Zipkin. Cenários: cache hit retorna cached=true; CB abre após N falhas → 503; retry reconecta na 2ª tentativa.",
         snippet: "@Container\nstatic RedisContainer redis = new RedisContainer(\"redis:7-alpine\");\n\n@Test void shouldReturnCachedTranscription() {\n  // 1ª chamada: miss → chama Whisper\n  // 2ª chamada: hit → Redis, cached=true\n}"
       }
     ]
@@ -297,7 +297,7 @@ const phases = [
   }
 
   ,{
-    id: 6, label: "Fase 6", title: "Bean Validation — DTOs e tratamento de erros (pendente)",
+    id: 6, label: "Fase 6", title: "não implementada (ver nota)",
     color: "#15803d", badgeBg: "#052e16", badgeColor: "#86efac",
     version: "pendente", taskCount: 2, done: false,
     tasks: [
@@ -317,7 +317,8 @@ const phases = [
         detail: "MethodArgumentNotValidException handler no GlobalExceptionHandler retornando ProblemDetail RFC 9457 com mapa de erros por campo. Padronizar idioma (português). Testes unitários dos validators. Testes de integração: requisição inválida → 400 com body estruturado verificado via jsonPath.",
         snippet: "// Resposta 400 estruturada:\n{\n  \"type\": \"https://api.diospeechai/errors/validation\",\n  \"title\": \"Erro de validação\",\n  \"status\": 400,\n  \"errors\": {\n    \"username\": \"Username é obrigatório\"\n  }\n}"
       }
-    ]
+    ],
+    detail: "A Fase 6 (Bean Validation) não foi implementada pois, até a versão atual (v10.2.0), não há DTOs com múltiplos campos que se beneficiariam da validação bean validation. Os objetos de entrada são simples (apenas um arquivo de upload) e a validação de conteúdo é feita por lógica de negócio no service. A fase será implementada quando o sistema introduzir DTOs complexos com múltiplos campos que requerem validação declarativa."
   }
   ,{
     id: 7, label: "Fase 7", title: "Arquitetura Hexagonal (Ports & Adapters)",

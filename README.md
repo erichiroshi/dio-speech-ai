@@ -34,7 +34,7 @@
 
 Solução desenvolvida para o desafio **DIO × Globant — Java & Spring Boot AI Developer**.
 
-API REST para transcrição de áudio com **Whisper** via [Speaches](https://github.com/speaches-ai/speaches), construída em quatro fases evolutivas: API base → observabilidade + cache → resiliência + segurança → documentação.
+API REST para transcrição de áudio com **Whisper** via [Speaches](https://github.com/speaches-ai/speaches), construída em dez fases evolutivas: API base → observabilidade + cache → resiliência (sem JWT) → documentação → CI/CD → Arquitetura Hexagonal → RabbitMQ → Notificações → Spring AI + Ollama.
 
 ---
 
@@ -48,7 +48,6 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 - [🚀 Quick Start](#-quick-start)
 - [📄 Swagger UI](#-swagger-ui)
 - [📡 Endpoint de transcrição](#-endpoint-de-transcrição)
-- [🔐 Autenticação JWT](#-autenticação-jwt)
 - [📊 Observabilidade](#-observabilidade)
 - [🧪 Testando a API](#-testando-a-api)
 - [🔧 Variáveis de ambiente](#-variáveis-de-ambiente)
@@ -67,10 +66,10 @@ API REST para transcrição de áudio com **Whisper** via [Speaches](https://git
 |---|---|---|
 | Fase 1 — API base | v1.0.0 | ✅ Concluída |
 | Fase 2 — Observabilidade + Cache | v2.1.0 → v2.7.0 | ✅ Concluída |
-| Fase 3 — Resiliência + Segurança | v3.1.0 → v3.5.0 | ✅ Concluída |
+| Fase 3 — Resiliência + Segurança¹ | v3.1.0 → v3.5.0 | ✅ Concluída |
 | Fase 4 — Documentação | v4.1.0 | ✅ Concluída |
 | Fase 5 — CI/CD | v5.1.0 → v5.3.0 | ✅ Concluída |
-| Fase 6 — Bean Validation | v6.x | ⏸️ Pendente — sem DTOs validáveis no momento |
+| Fase 6 — Bean Validation² | v6.x | ⏸️ Pendente — sem DTOs validáveis no momento |
 | Fase 7 — Arquitetura Hexagonal | v7.1.0 → v7.6.0 | ✅ Concluída |
 | Fase 8 — RabbitMQ | v8.1.0 → v8.3.0 | ✅ Concluída |
 | Fase 9 — Notificações | v9.1.0 → v9.3.0 | ✅ Concluída |

@@ -58,6 +58,11 @@
           📄 OpenAPI JSON — http://localhost:8080/v3/api-docs
         </a>
       </div>
+      <div class="note" style="margin-top:14px; background:#111827; border-left:3px solid #fbbf24; padding:10px 14px; border-radius:0 6px 6px 0; font-size:12.5px; color:var(--muted);">
+        ⚠️ JWT descontinuado na v5.1.0 — Todas as rotas são agora públicas.
+        <br/>Por questões de simplicidade e segurança, a autenticação JWT foi removida.
+        Não é mais necessário enviar Authorization: Bearer em nenhum endpoint.
+      </div>
       <div class="note" style="margin-top:14px;">
         ⚠️ Os links acima só funcionam com a aplicação em execução localmente.
         Inicie com <code>./gradlew bootRun --args='--spring.profiles.active=dev'</code> ou
@@ -75,7 +80,7 @@
             <td><span class="badge post">POST</span></td>
             <td>/api/transcriptions</td>
             <td>Transcrever arquivo de áudio (multipart/form-data)</td>
-            <td><span class="lock">🔒 ROLE_USER</span></td>
+            <td><span class="open">🔓 público</span></td>
           </tr>
           <tr>
             <td><span class="badge get">GET</span></td>
@@ -148,18 +153,69 @@
       <pre>
 # Cache miss — primeiro envio
 curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
   -F "file=@audio.wav;type=audio/wav" | jq .
 # → { "text": "testando o áudio...", "fileSizeBytes": 461842 }
 
 # Cache hit — mesmo arquivo
 curl -s -X POST http://localhost:8080/api/transcriptions \
-  -H "Authorization: Bearer $TOKEN" \
   -F "file=@audio.wav;type=audio/wav" | jq .cached
 # → true
 
 # Inspecionar chaves no Redis
 docker exec -it redis redis-cli keys 'transcription:*'</pre>
+    </section>
+
+    <!-- ── POST /api/transcriptions/{audioHash}/analysis ──────── -->
+    <section class="card">
+      <h2><span class="badge post">POST</span> /api/transcriptions/{audioHash}/analysis</h2>
+
+      <h3>Path Parameters</h3>
+      <table>
+        <thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>audioHash</td>
+            <td>String (path)</td>
+            <td>Hash SHA-256 da transcrição (retornado por POST /api/transcriptions)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Respostas</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Descrição</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="status s200">200</span></td>
+            <td>Resumo gerado</td>
+            <td><code>{ "audioHash": "...", "summary": "...", "model": "llama3.2:3b" }</code> ou com <code>"cached": true</code></td>
+          </tr>
+          <tr>
+            <td><span class="status s404">404</td>
+            <td>Transcrição não encontrada no cache</td>
+            <td>ProblemDetail com detalhe do erro e <code>requestId</code></td>
+          </tr>
+          <tr>
+            <td><span class="status s503">503</span></td>
+            <td>Ollama indisponível</td>
+            <td>ProblemDetail — serviço de análise temporariamente indisponível.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exemplos</h3>
+      <pre>
+# Primeira análise (cache miss)
+curl -s -X POST http://localhost:8080/api/transcriptions/a1b2c3.../analysis | jq .
+# → { "audioHash": "a1b2c3...", "summary": "O áudio discute...", "model": "llama3.2:3b" }
+
+# Análise em cache (cache hit ~15ms)
+curl -s -X POST http://localhost:8080/api/transcriptions/a1b2c3.../analysis | jq .cached
+# → true
+
+# Inspecionar chaves de resumo no Redis
+docker exec -it redis redis-cli keys 'summary:*'
+</pre>
     </section>
 
     <!-- ── FORMATO DE ERRO ────────────────────────────────────────────────── -->
