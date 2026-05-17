@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DioSpeech AI - Transcrição & Análise</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎙️ DioSpeech AI</h1>
+            <p>Transcreva áudios e gere resumos inteligentes com IA</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Card de Transcrição -->
+            <section class="card transcription-card">
+                <h2>Transcrição</h2>
+                <div class="input-group">
+                    <label for="audioFileInput">Selecione o arquivo de áudio</label>
+                    <input type="file" id="audioFileInput" accept="audio/*">
+                </div>
+
+                <button id="transcribeBtn">
+                    <span id="transcribeBtnText">Transcrever Áudio</span>
+                    <div id="transcribeLoader" class="loader hidden"></div>
+                </button>
+
+                <div id="transcriptionResultContainer" class="result-container hidden">
+                    <h3>Texto Transcrito:</h3>
+                    <div id="transcriptionText"></div>
+                    <div id="txHash"></div>
+                    <div id="txCache"></div>
+                </div>
+            </section>
+
+            <!-- Card de Resumo -->
+            <section class="card analysis-card">
+                <h2>Análise & Resumo</h2>
+                <p class="hint">Primeiro, realize a transcrição do áudio.</p>
+
+                <button id="analyzeBtn" disabled>
+                    <span id="analyzeBtnText">Gerar Resumo AI</span>
+                    <div id="analyzeLoader" class="loader hidden"></div>
+                </button>
+
+                <div id="analysisResultContainer" class="result-container hidden">
+                    <h3>Resumo Inteligente:</h3>
+                    <div id="analysisText"></div>
+                    <div id="axHash"></div>
+                    <div id="axModel"></div>
+                    <div id="axCache"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 DioSpeech AI</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

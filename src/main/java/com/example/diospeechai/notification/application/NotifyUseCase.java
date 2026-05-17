@@ -1,17 +1,12 @@
 package com.example.diospeechai.notification.application;
 
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 
-import com.example.diospeechai.notification.domain.model.NotificationChannel;
 import com.example.diospeechai.notification.domain.model.NotificationRequest;
 import com.example.diospeechai.notification.domain.port.in.NotifyPort;
 import com.example.diospeechai.notification.domain.port.out.NotificationPort;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,14 +21,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class NotifyUseCase implements NotifyPort {
-
-    private final Map<NotificationChannel, NotificationPort> adapters;
-
-    public NotifyUseCase(List<NotificationPort> ports) {
-        this.adapters = ports.stream()
-                .collect(Collectors.toMap(NotificationPort::channel, Function.identity()));
-    }
+	
+	private final NotificationFactory factory;
 
     /**
      * Envia a notificação pelo canal indicado no request.
@@ -43,20 +34,13 @@ public class NotifyUseCase implements NotifyPort {
      */
     @Override
     public void notify(NotificationRequest request) {
-        NotificationPort adapter = adapters.get(request.channel());
-
-        if (adapter == null) {
-            log.warn("Canal de notificação sem adapter registrado | channel={}",
-                    request.channel());
-            throw new IllegalArgumentException(
-                    "Canal não suportado: " + request.channel());
-        }
+        NotificationPort notificationAdapter = factory.get(request.channel());
 
         log.info("Enviando notificação | channel={} | transcriptionId={}",
                 request.channel(), request.transcriptionId());
 
         try {
-            adapter.send(request);
+            notificationAdapter.send(request);
             log.info("Notificação enviada | channel={} | transcriptionId={}",
                     request.channel(), request.transcriptionId());
         } catch (Exception ex) {
