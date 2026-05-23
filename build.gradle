@@ -28,12 +28,12 @@ configurations {
 
 ext{
 	logbackencoderVersion = '9.0'
-	aopVersion            = '3.5.13'
+	aopVersion            = '3.5.14'
 	resilience4jVersion   = '2.4.0'
    	testcontainersVersion = '2.0.4'
    	okhttpVersion         = '5.3.2'
 	springdocVersion      = '3.0.3'
-	springAiVersion       = '2.0.0-M5'
+	springAiVersion       = '2.0.0-M7'
 	
 	coverageExclusions = [
 	'**/config/**',
