@@ -125,8 +125,8 @@ dependencies {
 	// RabbitMQ real nos testes de integração v8.3.0
 	testImplementation 'org.testcontainers:rabbitmq:1.21.4'
     // GreenMail — servidor SMTP embarcado para testes (não usa conta real)
-    testImplementation 'com.icegreen:greenmail-spring:2.1.3'
-    testImplementation 'com.icegreen:greenmail:2.1.3'
+    testImplementation 'com.icegreen:greenmail-spring:2.1.8'
+    testImplementation 'com.icegreen:greenmail:2.1.8'
 }
 
 
